@@ -16,8 +16,9 @@ typecheck:
 dev-worker:
     pnpm --filter @flaregraph/worker dev
 
+# Uses wrangler.personal.jsonc (gitignored: custom domain, personal IDs) when present.
 deploy:
-    pnpm --filter @flaregraph/worker deploy
+    cd apps/worker && pnpm exec wrangler deploy $(test -f wrangler.personal.jsonc && echo "--config wrangler.personal.jsonc")
 
 migrate-local db="flaregraph.sqlite":
     pnpm --filter @flaregraph/cli exec flaregraph init --db {{db}}

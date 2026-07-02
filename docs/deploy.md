@@ -32,6 +32,11 @@ pnpm exec wrangler vectorize create flaregraph-chunks --dimensions=1024 --metric
 Copy the `database_id` printed by `d1 create` into `apps/worker/wrangler.jsonc`
 (`d1_databases[0].database_id`). All other names match the config as committed.
 
+> Personal overrides (a custom domain `routes` entry, extra bindings) go in
+> `apps/worker/wrangler.personal.jsonc` — a gitignored copy of `wrangler.jsonc`.
+> `just deploy` automatically prefers it when it exists, so the committed config
+> stays a clean template for the Deploy-to-Cloudflare button.
+
 > The dimensions/metric must stay `1024` / `cosine` — that is what `@cf/baai/bge-m3` produces.
 
 ## 2. Apply database migrations

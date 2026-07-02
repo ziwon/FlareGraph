@@ -12,3 +12,4 @@ playwright-report/
 test-results/
 packages/db/migrations/index.js
 packages/db/migrations/index.d.ts
+apps/worker/wrangler.personal.jsonc

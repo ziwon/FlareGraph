@@ -11,12 +11,12 @@
   "observability": {
     "enabled": true
   },
-  "routes": [
-    {
-      "pattern": "<worker-host>",
-      "custom_domain": true
-    }
-  ],
+  // Template config: the Deploy-to-Cloudflare button provisions these resources
+  // and rewrites database_id. Manual deployers: run the `wrangler d1 create` /
+  // `r2 bucket create` / `queues create` / `vectorize create` steps in
+  // docs/deploy.md and paste your D1 id below. Personal overrides (custom
+  // domains, remote-binding tweaks) belong in wrangler.personal.jsonc
+  // (gitignored); `just deploy` prefers it when present.
   "d1_databases": [
     {
       "binding": "DB",
@@ -29,11 +29,6 @@
     {
       "binding": "VAULT",
       "bucket_name": "flaregraph-vault"
-    },
-    {
-      "bucket_name": "flaregraph-vault",
-      "binding": "flaregraph_vault",
-      "remote": true
     }
   ],
   "queues": {

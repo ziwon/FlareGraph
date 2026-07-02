@@ -12,10 +12,10 @@ evidence. All derived stores (D1, Vectorize, R2 mirror) are rebuildable from the
 
 ## Docs
 
-- [Planning / architecture / ADRs](docs/planning.md): full design document, data model, search strategy, MVP phases
+- [README](README.md): positioning, architecture diagram, data flow, core invariants (ADRs)
 - [Deployment guide](docs/deploy.md): step-by-step Cloudflare setup for your own instance
 - [Deployment history](docs/deploy-history.md): reference instance record (<worker-host>)
-- [README](README.md): repository layout, quick start, API surface
+
 
 ## Code
 

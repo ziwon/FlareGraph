@@ -7,5 +7,6 @@ dist/
 *.sqlite-*
 .DS_Store
 coverage/
-.refspackages/db/migrations/index.js
+.refs/
+packages/db/migrations/index.js
 packages/db/migrations/index.d.ts

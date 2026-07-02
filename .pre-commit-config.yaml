@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: biome-check
+        name: biome check (lint + format)
+        entry: pnpm exec biome check --write --no-errors-on-unmatched
+        language: system
+        types_or: [ts, javascript, json]
+        exclude: ^(packages/db/migrations/index\.(js|d\.ts)|apps/worker/console/fonts/)
+      - id: typecheck
+        name: workspace typecheck
+        entry: pnpm -r typecheck
+        language: system
+        pass_filenames: false
+        types_or: [ts]

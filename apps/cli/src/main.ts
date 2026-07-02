@@ -1,16 +1,11 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Command } from 'commander';
+import { applyMigrations, expandNeighbors, getPageByPath, keywordSearch } from '@flaregraph/db';
 import { migrations } from '@flaregraph/db/migrations';
-import {
-  applyMigrations,
-  expandNeighbors,
-  getPageByPath,
-  keywordSearch,
-} from '@flaregraph/db';
-import { NodeSqliteExec } from './sqlite.js';
+import { Command } from 'commander';
 import { indexVault, loadSettings } from './indexer.js';
+import { NodeSqliteExec } from './sqlite.js';
 
 const DEFAULT_DB = process.env.FLAREGRAPH_DB ?? 'flaregraph.sqlite';
 
@@ -65,23 +60,28 @@ program
   .option('--include-compiled', 'rank compiled Wiki/ pages normally')
   .option('--semantic', 'semantic search (requires deployed worker; falls back to keyword)')
   .description('Search titles, aliases, tags, headings and full text (FTS5)')
-  .action(async (query: string, opts: { limit: string; includeCompiled?: boolean; semantic?: boolean }) => {
-    if (opts.semantic) {
-      console.error('semantic search runs in the cloud worker; using keyword search locally');
-    }
-    const exec = await openDb(program.opts().db);
-    const hits = await keywordSearch(exec, query, {
-      limit: parseInt(opts.limit, 10),
-      includeCompiled: opts.includeCompiled,
-    });
-    for (const h of hits) {
-      const extra = h.heading ? ` › ${h.heading}` : '';
-      console.log(`${h.score.toFixed(0).padStart(3)}  [${h.match_type}] ${h.path}${extra}`);
-      if (h.snippet) console.log(`      ${h.snippet.replace(/\n/g, ' ')}`);
-    }
-    if (hits.length === 0) console.log('no results');
-    exec.close();
-  });
+  .action(
+    async (
+      query: string,
+      opts: { limit: string; includeCompiled?: boolean; semantic?: boolean },
+    ) => {
+      if (opts.semantic) {
+        console.error('semantic search runs in the cloud worker; using keyword search locally');
+      }
+      const exec = await openDb(program.opts().db);
+      const hits = await keywordSearch(exec, query, {
+        limit: parseInt(opts.limit, 10),
+        includeCompiled: opts.includeCompiled,
+      });
+      for (const h of hits) {
+        const extra = h.heading ? ` › ${h.heading}` : '';
+        console.log(`${h.score.toFixed(0).padStart(3)}  [${h.match_type}] ${h.path}${extra}`);
+        if (h.snippet) console.log(`      ${h.snippet.replace(/\n/g, ' ')}`);
+      }
+      if (hits.length === 0) console.log('no results');
+      exec.close();
+    },
+  );
 
 program
   .command('read')
@@ -118,7 +118,8 @@ program
     );
     console.log(`# ${page.title} (${page.path})`);
     console.log(`\nOutgoing:`);
-    for (const l of out) console.log(`  ${l.resolved ? '→' : '⚠ dangling'} ${l.path ?? l.raw_target}`);
+    for (const l of out)
+      console.log(`  ${l.resolved ? '→' : '⚠ dangling'} ${l.path ?? l.raw_target}`);
     console.log(`\nBacklinks:`);
     for (const b of back) console.log(`  ← ${b.path}`);
     exec.close();
@@ -139,7 +140,12 @@ graph
       exec.close();
       return;
     }
-    const rows = await expandNeighbors(exec, page.id, parseInt(opts.hops, 10), parseInt(opts.limit, 10));
+    const rows = await expandNeighbors(
+      exec,
+      page.id,
+      parseInt(opts.hops, 10),
+      parseInt(opts.limit, 10),
+    );
     for (const r of rows) console.log(`  ${'·'.repeat(r.distance)} [${r.via}] ${r.path}`);
     if (rows.length === 0) console.log('no neighbors');
     exec.close();
@@ -178,7 +184,11 @@ program
       readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
         if (e.name.startsWith('.')) return [];
         const r = rel ? `${rel}/${e.name}` : e.name;
-        return e.isDirectory() ? walk(join(dir, e.name), r) : r.toLowerCase().endsWith('.md') ? [r] : [];
+        return e.isDirectory()
+          ? walk(join(dir, e.name), r)
+          : r.toLowerCase().endsWith('.md')
+            ? [r]
+            : [];
       });
     for (const path of walk(vault)) {
       const content = readFileSync(join(vault, path), 'utf8');
@@ -195,14 +205,21 @@ program
       remoteMap.delete(path);
     }
     for (const [path] of remoteMap) console.log(`only in cloud: ${path}`);
-    console.log(`\nverify done: ${mismatched} mismatched, ${missingRemote} missing in cloud, ${remoteMap.size} cloud-only`);
+    console.log(
+      `\nverify done: ${mismatched} mismatched, ${missingRemote} missing in cloud, ${remoteMap.size} cloud-only`,
+    );
     if (mismatched + missingRemote > 0) process.exitCode = 1;
   });
 
 const errors = program.command('errors').description('Error book');
 errors.command('list').action(async () => {
   const exec = await openDb(program.opts().db);
-  const rows = await exec.all<{ type: string; message: string; occurrence_count: number; status: string }>(
+  const rows = await exec.all<{
+    type: string;
+    message: string;
+    occurrence_count: number;
+    status: string;
+  }>(
     "SELECT type, message, occurrence_count, status FROM error_book WHERE status != 'resolved' ORDER BY occurrence_count DESC LIMIT 50",
   );
   for (const r of rows) console.log(`[${r.status}] ${r.type} ×${r.occurrence_count}: ${r.message}`);

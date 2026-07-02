@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-label="FlareGraph">
+  <title>FlareGraph</title>
   <rect width="24" height="24" rx="5" fill="#05070B"/>
   <circle cx="6" cy="17" r="2.1" stroke="#53D0C5" stroke-width="1.5"/>
   <circle cx="12" cy="6.5" r="2.1" stroke="#6E8BFF" stroke-width="1.5"/>

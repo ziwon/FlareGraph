@@ -10,7 +10,11 @@ const INLINE_TAG_RE = /(^|[\s(])#([\p{L}\p{N}_/-]+)/gu;
 function asStringArray(v: unknown): string[] {
   if (v == null) return [];
   if (Array.isArray(v)) return v.map(String).filter(Boolean);
-  if (typeof v === 'string') return v.split(',').map((s) => s.trim()).filter(Boolean);
+  if (typeof v === 'string')
+    return v
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   return [String(v)];
 }
 
@@ -45,7 +49,7 @@ export function parseNote(path: string, content: string): ParsedNote {
   let offset = 0;
   for (const line of masked.split('\n')) {
     const m = HEADING_RE.exec(line);
-    if (m && m[1] && m[2]) {
+    if (m?.[1] && m[2]) {
       // Recover original heading text (mask only touches code blocks, but be safe).
       const original = body.slice(offset, offset + line.length);
       const om = HEADING_RE.exec(original);

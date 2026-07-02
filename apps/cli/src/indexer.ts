@@ -2,17 +2,17 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import {
   DEFAULT_EXCLUDE_FOLDERS,
+  type ExclusionSettings,
   indexNote,
   sha256Hex,
-  type ExclusionSettings,
 } from '@flaregraph/core';
 import {
   deletePage,
   getPageChecksum,
   recordError,
   resolveAllLinks,
-  savePage,
   type SqlExec,
+  savePage,
 } from '@flaregraph/db';
 
 export interface IndexStats {
@@ -40,7 +40,14 @@ export async function indexVault(
   settings: ExclusionSettings,
   opts: { full?: boolean } = {},
 ): Promise<IndexStats> {
-  const stats: IndexStats = { scanned: 0, indexed: 0, skipped: 0, excluded: 0, deleted: 0, dangling: 0 };
+  const stats: IndexStats = {
+    scanned: 0,
+    indexed: 0,
+    skipped: 0,
+    excluded: 0,
+    deleted: 0,
+    dangling: 0,
+  };
   const now = new Date().toISOString();
   const seen = new Set<string>();
 
@@ -65,7 +72,12 @@ export async function indexVault(
     }
     await savePage(exec, idx, now);
     if (idx.invalidFrontmatter) {
-      await recordError(exec, 'invalid_frontmatter', `frontmatter parse failed: ${path}`, idx.page.id);
+      await recordError(
+        exec,
+        'invalid_frontmatter',
+        `frontmatter parse failed: ${path}`,
+        idx.page.id,
+      );
     }
     if (path.includes('.conflict')) {
       await recordError(exec, 'sync_conflict', `conflict file detected: ${path}`, idx.page.id);

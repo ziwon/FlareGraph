@@ -53,7 +53,10 @@
 
   // ── search
   let timer;
-  $('q').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 280); });
+  $('q').addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(run, 280);
+  });
   $('compiled').addEventListener('change', run);
   $('modes').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-mode]');
@@ -66,12 +69,22 @@
   async function run() {
     const q = $('q').value.trim();
     const box = $('results');
-    if (!q) { box.innerHTML = '<div class="empty">Type to search.</div>'; return; }
+    if (!q) {
+      box.innerHTML = '<div class="empty">Type to search.</div>';
+      return;
+    }
     box.innerHTML = '<div class="spin">searching…</div>';
     try {
-      const params = new URLSearchParams({ q, mode: state.mode, include_compiled: $('compiled').checked });
+      const params = new URLSearchParams({
+        q,
+        mode: state.mode,
+        include_compiled: $('compiled').checked,
+      });
       const res = await api(`/api/search?${params}`);
-      if (!res.ok) { box.innerHTML = `<div class="empty">search failed (${res.status})</div>`; return; }
+      if (!res.ok) {
+        box.innerHTML = `<div class="empty">search failed (${res.status})</div>`;
+        return;
+      }
       const data = await res.json();
       state.hits = data.hits;
       render();
@@ -82,11 +95,14 @@
 
   function render() {
     const box = $('results');
-    if (state.hits.length === 0) { box.innerHTML = '<div class="empty">No results.</div>'; return; }
+    if (state.hits.length === 0) {
+      box.innerHTML = '<div class="empty">No results.</div>';
+      return;
+    }
     box.innerHTML = '';
     for (const h of state.hits) {
       const el = document.createElement('button');
-      el.className = 'hit' + (h.path === state.activePath ? ' on' : '');
+      el.className = `hit${h.path === state.activePath ? ' on' : ''}`;
       el.innerHTML = `
         <div class="row1">
           <span class="title">${esc(h.title)}</span>
@@ -117,12 +133,17 @@
     $('rlinks').hidden = true;
     try {
       const res = await api(`/api/notes/${encodeURI(path)}`);
-      if (!res.ok) { $('rmd').textContent = `failed to read note (${res.status})`; return; }
+      if (!res.ok) {
+        $('rmd').textContent = `failed to read note (${res.status})`;
+        return;
+      }
       $('rmd').innerHTML = renderMd(await res.text());
       bindWikilinks();
       reader.scrollIntoView({ behavior: 'smooth', block: 'start' });
       loadLinks(path);
-    } catch { /* dialog already shown on 401 */ }
+    } catch {
+      /* dialog already shown on 401 */
+    }
   }
 
   async function loadLinks(path) {
@@ -136,18 +157,26 @@
       if (out.length === 0 && back.length === 0) return;
       const box = $('rlinks');
       box.innerHTML =
-        (out.length ? `<div class="lbl">Links</div><div class="chips">${out.map(chip).join('')}</div>` : '') +
-        (back.length ? `<div class="lbl">Backlinks</div><div class="chips">${back.map((l) => chipPath(l.srcPath)).join('')}</div>` : '');
+        (out.length
+          ? `<div class="lbl">Links</div><div class="chips">${out.map(chip).join('')}</div>`
+          : '') +
+        (back.length
+          ? `<div class="lbl">Backlinks</div><div class="chips">${back.map((l) => chipPath(l.srcPath)).join('')}</div>`
+          : '');
       box.hidden = false;
       for (const c of box.querySelectorAll('.chip[data-path]')) {
         c.addEventListener('click', () => openNote(c.dataset.path));
       }
-    } catch { /* links are optional */ }
+    } catch {
+      /* links are optional */
+    }
   }
-  const chip = (l) => l.resolved && l.dstPath
-    ? chipPath(l.dstPath)
-    : `<span class="chip dangling" title="dangling link">${esc(l.rawTarget)}</span>`;
-  const chipPath = (p) => `<span class="chip" data-path="${esc(p)}">${esc(p.split('/').pop().replace(/\.md$/i, ''))}</span>`;
+  const chip = (l) =>
+    l.resolved && l.dstPath
+      ? chipPath(l.dstPath)
+      : `<span class="chip dangling" title="dangling link">${esc(l.rawTarget)}</span>`;
+  const chipPath = (p) =>
+    `<span class="chip" data-path="${esc(p)}">${esc(p.split('/').pop().replace(/\.md$/i, ''))}</span>`;
 
   function bindWikilinks() {
     for (const w of $('rmd').querySelectorAll('.wikilink')) {
@@ -160,7 +189,10 @@
 
   // ── tiny markdown renderer (headings, fences, lists, quotes, inline marks)
   function esc(s) {
-    return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    return String(s).replace(
+      /[&<>"]/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c],
+    );
   }
   function snippet(s) {
     return esc(s).replace(/&lt;&lt;(.+?)&gt;&gt;/g, '<mark>$1</mark>');
@@ -168,9 +200,15 @@
   function inline(s) {
     return esc(s)
       .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/!?\[\[([^\][|#]+)(?:#[^\][|]*)?(?:\|([^\][]+))?\]\]/g,
-        (_, t, alias) => `<span class="wikilink" data-target="${esc(t.trim())}">${esc((alias || t).trim())}</span>`)
-      .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      .replace(
+        /!?\[\[([^\][|#]+)(?:#[^\][|]*)?(?:\|([^\][]+))?\]\]/g,
+        (_, t, alias) =>
+          `<span class="wikilink" data-target="${esc(t.trim())}">${esc((alias || t).trim())}</span>`,
+      )
+      .replace(
+        /\[([^\]]+)\]\((https?:[^)\s]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener">$1</a>',
+      )
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/(^|\W)\*([^*\n]+)\*(?=\W|$)/g, '$1<em>$2</em>');
   }
@@ -178,33 +216,68 @@
     let text = src;
     let fm = '';
     const m = /^---\n([\s\S]*?)\n---\n?/.exec(text);
-    if (m) { fm = `<div class="fm">${esc(m[1])}</div>`; text = text.slice(m[0].length); }
+    if (m) {
+      fm = `<div class="fm">${esc(m[1])}</div>`;
+      text = text.slice(m[0].length);
+    }
     const lines = text.split('\n');
     const out = [];
     let list = null; // 'ul' | 'ol'
     let inFence = false;
     let fenceBuf = [];
-    const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
+    const closeList = () => {
+      if (list) {
+        out.push(`</${list}>`);
+        list = null;
+      }
+    };
     for (const line of lines) {
       if (inFence) {
-        if (/^(```|~~~)/.test(line.trim())) { out.push(`<pre><code>${esc(fenceBuf.join('\n'))}</code></pre>`); inFence = false; fenceBuf = []; }
-        else fenceBuf.push(line);
+        if (/^(```|~~~)/.test(line.trim())) {
+          out.push(`<pre><code>${esc(fenceBuf.join('\n'))}</code></pre>`);
+          inFence = false;
+          fenceBuf = [];
+        } else fenceBuf.push(line);
         continue;
       }
-      if (/^(```|~~~)/.test(line.trim())) { closeList(); inFence = true; continue; }
+      if (/^(```|~~~)/.test(line.trim())) {
+        closeList();
+        inFence = true;
+        continue;
+      }
       const h = /^(#{1,6})\s+(.*)$/.exec(line);
-      if (h) { closeList(); out.push(`<h${Math.min(h[1].length, 4)}>${inline(h[2])}</h${Math.min(h[1].length, 4)}>`); continue; }
+      if (h) {
+        closeList();
+        out.push(`<h${Math.min(h[1].length, 4)}>${inline(h[2])}</h${Math.min(h[1].length, 4)}>`);
+        continue;
+      }
       if (/^\s*([-*+])\s+/.test(line)) {
-        if (list !== 'ul') { closeList(); out.push('<ul>'); list = 'ul'; }
-        out.push(`<li>${inline(line.replace(/^\s*[-*+]\s+/, ''))}</li>`); continue;
+        if (list !== 'ul') {
+          closeList();
+          out.push('<ul>');
+          list = 'ul';
+        }
+        out.push(`<li>${inline(line.replace(/^\s*[-*+]\s+/, ''))}</li>`);
+        continue;
       }
       if (/^\s*\d+\.\s+/.test(line)) {
-        if (list !== 'ol') { closeList(); out.push('<ol>'); list = 'ol'; }
-        out.push(`<li>${inline(line.replace(/^\s*\d+\.\s+/, ''))}</li>`); continue;
+        if (list !== 'ol') {
+          closeList();
+          out.push('<ol>');
+          list = 'ol';
+        }
+        out.push(`<li>${inline(line.replace(/^\s*\d+\.\s+/, ''))}</li>`);
+        continue;
       }
       closeList();
-      if (/^\s*(---|\*\*\*)\s*$/.test(line)) { out.push('<hr>'); continue; }
-      if (/^>\s?/.test(line)) { out.push(`<blockquote>${inline(line.replace(/^>\s?/, ''))}</blockquote>`); continue; }
+      if (/^\s*(---|\*\*\*)\s*$/.test(line)) {
+        out.push('<hr>');
+        continue;
+      }
+      if (/^>\s?/.test(line)) {
+        out.push(`<blockquote>${inline(line.replace(/^>\s?/, ''))}</blockquote>`);
+        continue;
+      }
       if (line.trim() === '') continue;
       out.push(`<p>${inline(line)}</p>`);
     }

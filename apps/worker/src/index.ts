@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import type { Env, IndexMessage } from './env.js';
-import { D1Exec } from './d1.js';
 import { authenticate } from './auth.js';
-import { api } from './routes/api.js';
-import { handleMcp } from './mcp/server.js';
+import { D1Exec } from './d1.js';
+import type { Env, IndexMessage } from './env.js';
 import { consumeBatch } from './indexer/index.js';
+import { handleMcp } from './mcp/server.js';
+import { api } from './routes/api.js';
 
 type Ctx = { Bindings: Env; Variables: { exec: D1Exec; subject: string } };
 
@@ -14,7 +14,9 @@ const app = new Hono<Ctx>();
  *  access throws a clear error instead of a TypeError. */
 const VAULT_UNAVAILABLE = new Proxy({} as R2Bucket, {
   get() {
-    throw new Error('R2 is not enabled on this Cloudflare account yet — enable R2 in the dashboard and redeploy with the VAULT binding (see docs/deploy.md)');
+    throw new Error(
+      'R2 is not enabled on this Cloudflare account yet — enable R2 in the dashboard and redeploy with the VAULT binding (see docs/deploy.md)',
+    );
   },
 });
 
@@ -22,7 +24,13 @@ app.use('*', async (c, next) => {
   if (!c.env.VAULT) c.env.VAULT = VAULT_UNAVAILABLE;
   const auth = await authenticate(c.req.raw, c.env);
   if (!auth.ok) {
-    return c.json({ error: 'unauthorized', hint: 'log in via Cloudflare Access or send Authorization: Bearer <API_TOKEN>' }, 401);
+    return c.json(
+      {
+        error: 'unauthorized',
+        hint: 'log in via Cloudflare Access or send Authorization: Bearer <API_TOKEN>',
+      },
+      401,
+    );
   }
   c.set('subject', auth.subject ?? 'unknown');
   c.set('exec', new D1Exec(c.env.DB));

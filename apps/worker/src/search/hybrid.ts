@@ -51,10 +51,13 @@ export async function search(
         for (const m of res.matches) {
           const md = (m.metadata ?? {}) as { page_id?: string; path?: string; heading?: string };
           if (!md.page_id || !md.path) continue;
-          const pageRows = await exec.all<{ title: string; tier: string; indexed_at: string | null }>(
-            'SELECT title, tier, indexed_at FROM pages WHERE id = ? AND deleted_at IS NULL',
-            [md.page_id],
-          );
+          const pageRows = await exec.all<{
+            title: string;
+            tier: string;
+            indexed_at: string | null;
+          }>('SELECT title, tier, indexed_at FROM pages WHERE id = ? AND deleted_at IS NULL', [
+            md.page_id,
+          ]);
           const page = pageRows[0];
           if (!page) continue; // orphan vector — GC will catch it
           add({

@@ -115,6 +115,6 @@ export async function indexNote(
     links,
     chunks,
     parsed,
-    invalidFrontmatter: parsed.frontmatter['__invalid_frontmatter'] === true,
+    invalidFrontmatter: parsed.frontmatter.__invalid_frontmatter === true,
   };
 }

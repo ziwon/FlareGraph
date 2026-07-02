@@ -72,7 +72,7 @@ function segment(body: string, bodyOffset: number): Segment[] {
       buf.push(line);
     } else {
       const h = /^(#{1,6})\s+(.+?)\s*#*\s*$/.exec(line);
-      if (h && h[2]) {
+      if (h?.[2]) {
         flush(lineStart);
         currentHeading = slugify(h[2]);
         bufStart = lineStart + line.length + 1;

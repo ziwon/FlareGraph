@@ -37,7 +37,10 @@ export interface PageRow {
 }
 
 export async function getPageByPath(exec: SqlExec, path: string): Promise<PageRow | undefined> {
-  const rows = await exec.all<PageRow>('SELECT * FROM pages WHERE path = ? AND deleted_at IS NULL', [path]);
+  const rows = await exec.all<PageRow>(
+    'SELECT * FROM pages WHERE path = ? AND deleted_at IS NULL',
+    [path],
+  );
   return rows[0];
 }
 
@@ -137,13 +140,19 @@ export async function savePage(exec: SqlExec, idx: IndexedNote, now: string): Pr
 }
 
 /** Soft-delete a page and remove its derived rows (FTS immediately, vectors via GC). */
-export async function deletePage(exec: SqlExec, path: string, now: string): Promise<string | undefined> {
+export async function deletePage(
+  exec: SqlExec,
+  path: string,
+  now: string,
+): Promise<string | undefined> {
   const page = await getPageByPath(exec, path);
   if (!page) return undefined;
   await exec.run('UPDATE pages SET deleted_at = ? WHERE id = ?', [now, page.id]);
   await exec.run('DELETE FROM headings WHERE page_id = ?', [page.id]);
   await exec.run('DELETE FROM links WHERE src_page_id = ?', [page.id]);
-  await exec.run('UPDATE links SET dst_page_id = NULL, resolved = 0 WHERE dst_page_id = ?', [page.id]);
+  await exec.run('UPDATE links SET dst_page_id = NULL, resolved = 0 WHERE dst_page_id = ?', [
+    page.id,
+  ]);
   await exec.run('DELETE FROM chunks WHERE page_id = ?', [page.id]);
   await exec.run('DELETE FROM chunks_fts WHERE page_id = ?', [page.id]);
   return page.id;
@@ -162,7 +171,9 @@ export async function findPageByChecksum(
 }
 
 /** Global link resolution pass: fills dst_page_id using path/title/alias matching. */
-export async function resolveAllLinks(exec: SqlExec): Promise<{ resolved: number; dangling: number }> {
+export async function resolveAllLinks(
+  exec: SqlExec,
+): Promise<{ resolved: number; dangling: number }> {
   const pages = await exec.all<{ id: string; path: string; title: string; aliases: string | null }>(
     'SELECT id, path, title, aliases FROM pages WHERE deleted_at IS NULL',
   );
@@ -181,7 +192,10 @@ export async function resolveAllLinks(exec: SqlExec): Promise<{ resolved: number
   for (const l of links) {
     const target = resolver.resolve(l.raw_target);
     if (target) {
-      await exec.run('UPDATE links SET dst_page_id = ?, resolved = 1 WHERE id = ?', [target.id, l.id]);
+      await exec.run('UPDATE links SET dst_page_id = ?, resolved = 1 WHERE id = ?', [
+        target.id,
+        l.id,
+      ]);
       resolved++;
     } else {
       await exec.run('UPDATE links SET dst_page_id = NULL, resolved = 0 WHERE id = ?', [l.id]);
@@ -246,7 +260,15 @@ export async function keywordSearch(
     const titleExact = p.title.toLowerCase() === q.toLowerCase();
     const aliasMatch = safeJsonArray(p.aliases).some((a) => a.toLowerCase() === q.toLowerCase());
     const tagMatch = safeJsonArray(p.tags).some((t) => t.toLowerCase() === q.toLowerCase());
-    const score = titleExact ? 100 : aliasMatch ? 90 : p.title.toLowerCase().includes(q.toLowerCase()) ? 70 : tagMatch ? 60 : 50;
+    const score = titleExact
+      ? 100
+      : aliasMatch
+        ? 90
+        : p.title.toLowerCase().includes(q.toLowerCase())
+          ? 70
+          : tagMatch
+            ? 60
+            : 50;
     add({
       page_id: p.id,
       path: p.path,
@@ -261,7 +283,12 @@ export async function keywordSearch(
   }
 
   const headingRows = await exec.all<{
-    page_id: string; path: string; title: string; tier: string; htitle: string; indexed_at: string | null;
+    page_id: string;
+    path: string;
+    title: string;
+    tier: string;
+    htitle: string;
+    indexed_at: string | null;
   }>(
     `SELECT h.page_id, p.path, p.title, p.tier, h.title AS htitle, p.indexed_at
      FROM headings h JOIN pages p ON p.id = h.page_id
@@ -270,8 +297,15 @@ export async function keywordSearch(
   );
   for (const r of headingRows) {
     add({
-      page_id: r.page_id, path: r.path, title: r.title, tier: r.tier,
-      score: 55, match_type: 'heading', snippet: null, heading: r.htitle, indexed_at: r.indexed_at,
+      page_id: r.page_id,
+      path: r.path,
+      title: r.title,
+      tier: r.tier,
+      score: 55,
+      match_type: 'heading',
+      snippet: null,
+      heading: r.htitle,
+      indexed_at: r.indexed_at,
     });
   }
 
@@ -279,7 +313,14 @@ export async function keywordSearch(
   if (match) {
     try {
       const ftsRows = await exec.all<{
-        page_id: string; path: string; title: string; tier: string; snippet: string; heading: string; rank: number; indexed_at: string | null;
+        page_id: string;
+        path: string;
+        title: string;
+        tier: string;
+        snippet: string;
+        heading: string;
+        rank: number;
+        indexed_at: string | null;
       }>(
         `SELECT f.page_id, p.path, p.title, p.tier, p.indexed_at, f.heading,
                 snippet(chunks_fts, 3, '<<', '>>', ' … ', 12) AS snippet,
@@ -293,8 +334,15 @@ export async function keywordSearch(
         // bm25 rank is lower-is-better and negative-ish; map into (0, 50)
         const score = Math.max(1, Math.min(49, 40 - r.rank));
         add({
-          page_id: r.page_id, path: r.path, title: r.title, tier: r.tier,
-          score, match_type: 'fts', snippet: r.snippet, heading: r.heading || null, indexed_at: r.indexed_at,
+          page_id: r.page_id,
+          path: r.path,
+          title: r.title,
+          tier: r.tier,
+          score,
+          match_type: 'fts',
+          snippet: r.snippet,
+          heading: r.heading || null,
+          indexed_at: r.indexed_at,
         });
       }
     } catch {
@@ -368,10 +416,9 @@ export async function recordError(
   );
   const first = existing[0];
   if (first) {
-    await exec.run(
-      'UPDATE error_book SET occurrence_count = occurrence_count + 1 WHERE id = ?',
-      [first.id],
-    );
+    await exec.run('UPDATE error_book SET occurrence_count = occurrence_count + 1 WHERE id = ?', [
+      first.id,
+    ]);
   } else {
     await exec.run(
       'INSERT INTO error_book (id, type, target_id, message, status, occurrence_count, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)',

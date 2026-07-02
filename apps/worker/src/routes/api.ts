@@ -1,12 +1,12 @@
-import { Hono } from 'hono';
 import type { SearchMode } from '@flaregraph/contracts';
 import { getPageByPath, keywordSearch, safeJsonArray } from '@flaregraph/db';
-import type { Env } from '../env.js';
-import { D1Exec } from '../d1.js';
-import { search } from '../search/hybrid.js';
-import { captureNote, findClaims, listLinksFor, neighborsForPath, readNote } from '../handlers.js';
+import { Hono } from 'hono';
 import { compileWikiPage, extractGraph } from '../compiler.js';
+import type { D1Exec } from '../d1.js';
+import type { Env } from '../env.js';
+import { captureNote, findClaims, listLinksFor, neighborsForPath, readNote } from '../handlers.js';
 import { rebuildFromMirror } from '../indexer/index.js';
+import { search } from '../search/hybrid.js';
 
 type Ctx = { Bindings: Env; Variables: { exec: D1Exec; subject: string } };
 
@@ -17,7 +17,12 @@ api.get('/health', async (c) => {
   const rows = await exec.all<{ n: number; last: string | null }>(
     'SELECT COUNT(*) AS n, MAX(indexed_at) AS last FROM pages WHERE deleted_at IS NULL',
   );
-  return c.json({ ok: true, version: '0.1.0', pages: rows[0]?.n ?? 0, lastIndexedAt: rows[0]?.last ?? null });
+  return c.json({
+    ok: true,
+    version: '0.1.0',
+    pages: rows[0]?.n ?? 0,
+    lastIndexedAt: rows[0]?.last ?? null,
+  });
 });
 
 api.get('/pages', async (c) => {
@@ -28,22 +33,28 @@ api.get('/pages', async (c) => {
     [limit],
   );
   return c.json({
-    pages: rows.map((r) => ({ ...r, aliases: safeJsonArray(r.aliases as string), tags: safeJsonArray(r.tags as string) })),
+    pages: rows.map((r) => ({
+      ...r,
+      aliases: safeJsonArray(r.aliases as string),
+      tags: safeJsonArray(r.tags as string),
+    })),
   });
 });
 
 api.get('/pages/:id', async (c) => {
   const exec = c.get('exec');
-  const rows = await exec.all<{ path: string }>('SELECT path FROM pages WHERE id = ? AND deleted_at IS NULL', [
-    c.req.param('id'),
-  ]);
+  const rows = await exec.all<{ path: string }>(
+    'SELECT path FROM pages WHERE id = ? AND deleted_at IS NULL',
+    [c.req.param('id')],
+  );
   const row = rows[0];
   if (!row) return c.json({ error: 'not found' }, 404);
   const page = await getPageByPath(exec, row.path);
   const links = await listLinksFor(exec, row.path);
-  const headings = await exec.all('SELECT level, title, slug FROM headings WHERE page_id = ? ORDER BY position', [
-    c.req.param('id'),
-  ]);
+  const headings = await exec.all(
+    'SELECT level, title, slug FROM headings WHERE page_id = ? ORDER BY position',
+    [c.req.param('id')],
+  );
   return c.json({ ...page, headings, ...links });
 });
 
@@ -72,19 +83,27 @@ api.get('/notes/*', async (c) => {
 
 api.get('/graph/neighbors/:id', async (c) => {
   const exec = c.get('exec');
-  const rows = await exec.all<{ path: string }>('SELECT path FROM pages WHERE id = ? AND deleted_at IS NULL', [
-    c.req.param('id'),
-  ]);
+  const rows = await exec.all<{ path: string }>(
+    'SELECT path FROM pages WHERE id = ? AND deleted_at IS NULL',
+    [c.req.param('id')],
+  );
   const row = rows[0];
   if (!row) return c.json({ error: 'not found' }, 404);
   const hops = Math.min(parseInt(c.req.query('hops') ?? '1', 10), 2);
-  const neighbors = await neighborsForPath(exec, row.path, hops, parseInt(c.req.query('limit') ?? '20', 10));
+  const neighbors = await neighborsForPath(
+    exec,
+    row.path,
+    hops,
+    parseInt(c.req.query('limit') ?? '20', 10),
+  );
   return c.json({ neighbors });
 });
 
 api.get('/claims', async (c) => {
   const q = c.req.query('q') ?? '';
-  return c.json({ claims: await findClaims(c.get('exec'), q, parseInt(c.req.query('limit') ?? '20', 10)) });
+  return c.json({
+    claims: await findClaims(c.get('exec'), q, parseInt(c.req.query('limit') ?? '20', 10)),
+  });
 });
 
 api.post('/capture', async (c) => {
@@ -120,7 +139,13 @@ api.post('/index/rebuild', async (c) => {
 api.post('/wiki/compile', async (c) => {
   const body = (await c.req.json()) as { topic?: string; category?: string; maxSources?: number };
   if (!body.topic?.trim()) return c.json({ error: 'topic required' }, 400);
-  const result = await compileWikiPage(c.env, c.get('exec'), body.topic, body.category ?? 'Concepts', body.maxSources ?? 5);
+  const result = await compileWikiPage(
+    c.env,
+    c.get('exec'),
+    body.topic,
+    body.category ?? 'Concepts',
+    body.maxSources ?? 5,
+  );
   return c.json(result, 201);
 });
 
@@ -133,12 +158,16 @@ api.post('/graph/extract', async (c) => {
 api.get('/errors', async (c) => {
   const rows = await c
     .get('exec')
-    .all("SELECT type, message, status, occurrence_count, created_at FROM error_book WHERE status != 'resolved' ORDER BY occurrence_count DESC LIMIT 100");
+    .all(
+      "SELECT type, message, status, occurrence_count, created_at FROM error_book WHERE status != 'resolved' ORDER BY occurrence_count DESC LIMIT 100",
+    );
   return c.json({ errors: rows });
 });
 
 api.get('/rules', async (c) => {
-  const rows = await c.get('exec').all('SELECT rule, active, created_at FROM compiler_rules ORDER BY created_at DESC LIMIT 100');
+  const rows = await c
+    .get('exec')
+    .all('SELECT rule, active, created_at FROM compiler_rules ORDER BY created_at DESC LIMIT 100');
   return c.json({ rules: rows });
 });
 

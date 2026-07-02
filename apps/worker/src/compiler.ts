@@ -3,9 +3,9 @@ import {
   newId,
   renderWikiPage,
   sha256Hex,
-  wikiPagePath,
   type WikiCompileResult,
   type WikiSource,
+  wikiPagePath,
 } from '@flaregraph/core';
 import { keywordSearch, recordError, type SqlExec } from '@flaregraph/db';
 import type { Env } from './env.js';
@@ -15,10 +15,13 @@ interface LlmTextResponse {
 }
 
 async function runLlm(env: Env, prompt: string): Promise<string> {
-  const res = (await env.AI.run(env.LLM_MODEL as keyof AiModels, {
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 2048,
-  } as never)) as unknown as LlmTextResponse;
+  const res = (await env.AI.run(
+    env.LLM_MODEL as keyof AiModels,
+    {
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 2048,
+    } as never,
+  )) as unknown as LlmTextResponse;
   return res.response ?? '';
 }
 
@@ -48,7 +51,8 @@ export async function compileWikiPage(
   const sources: WikiSource[] = [];
   for (const h of rawHits) {
     const obj = await env.VAULT.get(h.path);
-    if (obj) sources.push({ path: h.path, title: h.title, body: (await obj.text()).slice(0, 20000) });
+    if (obj)
+      sources.push({ path: h.path, title: h.title, body: (await obj.text()).slice(0, 20000) });
   }
   if (sources.length === 0) throw new Error('source notes missing from R2 mirror');
 
@@ -65,7 +69,7 @@ export async function compileWikiPage(
 
   const raw = await runLlm(env, buildWikiPrompt(topic, sources, activeRules));
   const result = parseJson<WikiCompileResult>(raw);
-  if (!result || !result.summary) {
+  if (!result?.summary) {
     await recordError(exec, 'bad_summary', `compiler returned unparseable output for "${topic}"`);
     throw new Error('LLM output was not valid JSON');
   }
@@ -74,7 +78,11 @@ export async function compileWikiPage(
   const dropped = (result.claims ?? []).filter((c) => !validPaths.has(c.sourcePath));
   result.claims = (result.claims ?? []).filter((c) => validPaths.has(c.sourcePath));
   for (const d of dropped) {
-    await recordError(exec, 'unsupported_claim', `claim without valid source in "${topic}": ${d.text.slice(0, 120)}`);
+    await recordError(
+      exec,
+      'unsupported_claim',
+      `claim without valid source in "${topic}": ${d.text.slice(0, 120)}`,
+    );
   }
 
   const now = new Date().toISOString();
@@ -92,7 +100,9 @@ export async function compileWikiPage(
   );
   // store extracted claims with evidence (planning §2.3)
   for (const c of result.claims) {
-    const pageRow = await exec.all<{ id: string }>('SELECT id FROM pages WHERE path = ?', [c.sourcePath]);
+    const pageRow = await exec.all<{ id: string }>('SELECT id FROM pages WHERE path = ?', [
+      c.sourcePath,
+    ]);
     const first = pageRow[0];
     if (!first) continue;
     await exec.run(
@@ -118,7 +128,9 @@ export async function maybeDistillErrors(env: Env, exec: SqlExec): Promise<void>
     );
     const prompt = `These recurring errors of type "${g.type}" occurred in a wiki compiler pipeline:\n${errors
       .map((e) => `- ${e.message}`)
-      .join('\n')}\n\nWrite ONE short imperative rule (max 200 chars) that, if followed, prevents this class of error. Respond with the rule text only.`;
+      .join(
+        '\n',
+      )}\n\nWrite ONE short imperative rule (max 200 chars) that, if followed, prevents this class of error. Respond with the rule text only.`;
     const rule = (await runLlm(env, prompt)).trim().split('\n')[0]?.slice(0, 300);
     if (!rule) continue;
     const now = new Date().toISOString();
@@ -127,13 +139,20 @@ export async function maybeDistillErrors(env: Env, exec: SqlExec): Promise<void>
       [newId('rule'), rule, JSON.stringify(errors.map((e) => e.id)), now],
     );
     for (const e of errors) {
-      await exec.run("UPDATE error_book SET status = 'distilled', resolved_at = ? WHERE id = ?", [now, e.id]);
+      await exec.run("UPDATE error_book SET status = 'distilled', resolved_at = ? WHERE id = ?", [
+        now,
+        e.id,
+      ]);
     }
   }
 }
 
 /** MVP 5: LLM entity/claim/relation extraction with mandatory evidence. */
-export async function extractGraph(env: Env, exec: SqlExec, path: string): Promise<{ claims: number; edges: number }> {
+export async function extractGraph(
+  env: Env,
+  exec: SqlExec,
+  path: string,
+): Promise<{ claims: number; edges: number }> {
   const pageRows = await exec.all<{ id: string; title: string }>(
     'SELECT id, title FROM pages WHERE path = ? AND deleted_at IS NULL',
     [path],
@@ -186,7 +205,9 @@ ${body}`;
 
 async function upsertEntity(exec: SqlExec, name: string, now: string): Promise<string> {
   const normalized = name.trim().toLowerCase();
-  const rows = await exec.all<{ id: string }>('SELECT id FROM entities WHERE normalized_name = ?', [normalized]);
+  const rows = await exec.all<{ id: string }>('SELECT id FROM entities WHERE normalized_name = ?', [
+    normalized,
+  ]);
   const first = rows[0];
   if (first) return first.id;
   const id = newId('ent');

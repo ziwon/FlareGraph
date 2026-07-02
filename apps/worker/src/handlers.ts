@@ -1,6 +1,6 @@
-import { newId } from '@flaregraph/core';
-import { expandNeighbors, getPageByPath, safeJsonArray, type SqlExec } from '@flaregraph/db';
 import type { LinkDto } from '@flaregraph/contracts';
+import { newId } from '@flaregraph/core';
+import { expandNeighbors, getPageByPath, type SqlExec, safeJsonArray } from '@flaregraph/db';
 import type { Env } from './env.js';
 
 /** capture_note (ADR-006): the only write primitive — new files in inbox/ only. */
@@ -13,7 +13,11 @@ export async function captureNote(
   const date = now.toISOString().slice(0, 10);
   const shortid = crypto.randomUUID().slice(0, 8);
   const slugTitle = input.title
-    ? input.title.replace(/[\\/:*?"<>|#[\]]/g, '').trim().replace(/\s+/g, '-').slice(0, 60)
+    ? input.title
+        .replace(/[\\/:*?"<>|#[\]]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .slice(0, 60)
     : 'capture';
   const key = `inbox/${date}-${slugTitle}-${shortid}.md`;
 
@@ -39,19 +43,31 @@ export async function captureNote(
   return { r2Key: key, captureId };
 }
 
-export async function readNote(env: Env, exec: SqlExec, path: string): Promise<{ content: string; indexedAt: string | null } | null> {
+export async function readNote(
+  env: Env,
+  exec: SqlExec,
+  path: string,
+): Promise<{ content: string; indexedAt: string | null } | null> {
   const obj = await env.VAULT.get(path);
   if (!obj) return null;
   const page = await getPageByPath(exec, path);
   return { content: await obj.text(), indexedAt: page?.indexed_at ?? null };
 }
 
-export async function listLinksFor(exec: SqlExec, path: string): Promise<{ outgoing: LinkDto[]; backlinks: LinkDto[] } | null> {
+export async function listLinksFor(
+  exec: SqlExec,
+  path: string,
+): Promise<{ outgoing: LinkDto[]; backlinks: LinkDto[] } | null> {
   const page = await getPageByPath(exec, path);
   if (!page) return null;
   const outgoing = await exec.all<{
-    src_page_id: string; dst_page_id: string | null; raw_target: string; link_type: string;
-    anchor_text: string | null; resolved: number; dst_path: string | null;
+    src_page_id: string;
+    dst_page_id: string | null;
+    raw_target: string;
+    link_type: string;
+    anchor_text: string | null;
+    resolved: number;
+    dst_path: string | null;
   }>(
     `SELECT l.src_page_id, l.dst_page_id, l.raw_target, l.link_type, l.anchor_text, l.resolved, p.path AS dst_path
      FROM links l LEFT JOIN pages p ON p.id = l.dst_page_id
@@ -59,7 +75,11 @@ export async function listLinksFor(exec: SqlExec, path: string): Promise<{ outgo
     [page.id],
   );
   const backlinks = await exec.all<{
-    src_page_id: string; raw_target: string; link_type: string; anchor_text: string | null; src_path: string;
+    src_page_id: string;
+    raw_target: string;
+    link_type: string;
+    anchor_text: string | null;
+    src_path: string;
   }>(
     `SELECT l.src_page_id, l.raw_target, l.link_type, l.anchor_text, p.path AS src_path
      FROM links l JOIN pages p ON p.id = l.src_page_id
@@ -98,7 +118,9 @@ export async function followLinks(
 ): Promise<{ path: string; title: string; preview: string }[] | null> {
   const links = await listLinksFor(exec, path);
   if (!links) return null;
-  const targets = [...new Set(links.outgoing.filter((l) => l.resolved && l.dstPath).map((l) => l.dstPath!))].slice(0, limit);
+  const targets = [
+    ...new Set(links.outgoing.filter((l) => l.resolved && l.dstPath).map((l) => l.dstPath!)),
+  ].slice(0, limit);
   const out: { path: string; title: string; preview: string }[] = [];
   for (const t of targets) {
     const obj = await env.VAULT.get(t);
@@ -111,7 +133,12 @@ export async function followLinks(
 
 export async function findClaims(exec: SqlExec, query: string, limit = 20) {
   const like = `%${query}%`;
-  return exec.all<{ text: string; confidence: number | null; source_span: string | null; path: string }>(
+  return exec.all<{
+    text: string;
+    confidence: number | null;
+    source_span: string | null;
+    path: string;
+  }>(
     `SELECT c.text, c.confidence, c.source_span, p.path FROM claims c
      JOIN pages p ON p.id = c.page_id
      WHERE c.text LIKE ? COLLATE NOCASE AND p.deleted_at IS NULL
@@ -124,7 +151,13 @@ export async function neighborsForPath(exec: SqlExec, path: string, hops: number
   const page = await getPageByPath(exec, path);
   if (!page) return null;
   const rows = await expandNeighbors(exec, page.id, hops, limit);
-  return rows.map((r) => ({ pageId: r.page_id, path: r.path, title: r.title, distance: r.distance, via: r.via }));
+  return rows.map((r) => ({
+    pageId: r.page_id,
+    path: r.path,
+    title: r.title,
+    distance: r.distance,
+    via: r.via,
+  }));
 }
 
 export { safeJsonArray };

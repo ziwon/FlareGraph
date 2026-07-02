@@ -37,10 +37,10 @@
     </div>
     <div class="controls">
       <div class="modes" id="modes" role="tablist">
-        <button class="on" data-mode="hybrid">Hybrid</button>
-        <button data-mode="keyword">Keyword</button>
-        <button data-mode="semantic">Semantic</button>
-        <button data-mode="graph">Graph</button>
+        <button type="button" class="on" data-mode="hybrid">Hybrid</button>
+        <button type="button" data-mode="keyword">Keyword</button>
+        <button type="button" data-mode="semantic">Semantic</button>
+        <button type="button" data-mode="graph">Graph</button>
       </div>
       <label class="toggle"><input type="checkbox" id="compiled"> include Wiki/ pages</label>
     </div>
@@ -51,8 +51,8 @@
     <aside class="reader" id="reader">
       <div class="rhead">
         <span class="rpath" id="rpath"></span>
-        <button id="rclose" title="Close" aria-label="Close">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <button type="button" id="rclose" title="Close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
       </div>
       <div class="rbody"><article class="md" id="rmd"></article></div>
@@ -66,8 +66,8 @@
   <p>This instance is protected. Paste your API token (or log in via Cloudflare Access and reload).</p>
   <input id="token-input" type="password" placeholder="API token" autocomplete="off">
   <div class="actions">
-    <button class="btn" id="token-cancel">Cancel</button>
-    <button class="btn primary" id="token-save">Save</button>
+    <button type="button" class="btn" id="token-cancel">Cancel</button>
+    <button type="button" class="btn primary" id="token-save">Save</button>
   </div>
 </dialog>
 

@@ -15,7 +15,7 @@ export function isExcluded(
     f.endsWith('/') ? f : `${f}/`,
   );
   if (folders.some((f) => normalized.startsWith(f))) return true;
-  if (frontmatter && frontmatter['private'] === true) return true;
+  if (frontmatter && frontmatter.private === true) return true;
   return false;
 }
 

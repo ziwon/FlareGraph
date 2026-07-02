@@ -1,11 +1,11 @@
-import { mkdtempSync, mkdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
 import { applyMigrations, expandNeighbors, getPageByPath, keywordSearch } from '@flaregraph/db';
 import { migrations } from '@flaregraph/db/migrations';
-import { NodeSqliteExec } from '../src/sqlite.js';
+import { afterAll, describe, expect, it } from 'vitest';
 import { indexVault } from '../src/indexer.js';
+import { NodeSqliteExec } from '../src/sqlite.js';
 
 const dir = mkdtempSync(join(tmpdir(), 'flaregraph-test-'));
 const vault = join(dir, 'vault');

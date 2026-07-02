@@ -1,12 +1,12 @@
 import {
-  App,
+  type App,
   Notice,
+  normalizePath,
   Plugin,
   PluginSettingTab,
   Setting,
-  TAbstractFile,
+  type TAbstractFile,
   TFile,
-  normalizePath,
 } from 'obsidian';
 
 interface FlareGraphSettings {
@@ -107,7 +107,7 @@ export default class FlareGraphPlugin extends Plugin {
 
   private headers(): Record<string, string> {
     const h: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (this.settings.apiToken) h['Authorization'] = `Bearer ${this.settings.apiToken}`;
+    if (this.settings.apiToken) h.Authorization = `Bearer ${this.settings.apiToken}`;
     if (this.settings.accessClientId) {
       h['CF-Access-Client-Id'] = this.settings.accessClientId;
       h['CF-Access-Client-Secret'] = this.settings.accessClientSecret;
@@ -133,7 +133,9 @@ export default class FlareGraphPlugin extends Plugin {
       new Notice(`FlareGraph: inbox folder "${this.settings.inboxFolder}" not found`);
       return;
     }
-    const files = inbox.children.filter((f): f is TFile => f instanceof TFile && f.extension === 'md');
+    const files = inbox.children.filter(
+      (f): f is TFile => f instanceof TFile && f.extension === 'md',
+    );
     if (files.length === 0) {
       new Notice('FlareGraph: inbox is empty');
       return;
@@ -189,53 +191,59 @@ class FlareGraphSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('Worker URL')
       .setDesc('Deployed FlareGraph worker, e.g. https://flaregraph.example.workers.dev')
-      .addText((t) => t.setValue(this.plugin.settings.apiUrl).onChange(async (v) => {
-        this.plugin.settings.apiUrl = v.trim();
-        await this.plugin.saveSettings();
-      }));
+      .addText((t) =>
+        t.setValue(this.plugin.settings.apiUrl).onChange(async (v) => {
+          this.plugin.settings.apiUrl = v.trim();
+          await this.plugin.saveSettings();
+        }),
+      );
 
     new Setting(containerEl)
       .setName('API token')
       .setDesc('Bearer token (if not using Cloudflare Access service tokens)')
-      .addText((t) => t.setValue(this.plugin.settings.apiToken).onChange(async (v) => {
-        this.plugin.settings.apiToken = v.trim();
-        await this.plugin.saveSettings();
-      }));
+      .addText((t) =>
+        t.setValue(this.plugin.settings.apiToken).onChange(async (v) => {
+          this.plugin.settings.apiToken = v.trim();
+          await this.plugin.saveSettings();
+        }),
+      );
 
-    new Setting(containerEl)
-      .setName('Access service token: Client ID')
-      .addText((t) => t.setValue(this.plugin.settings.accessClientId).onChange(async (v) => {
+    new Setting(containerEl).setName('Access service token: Client ID').addText((t) =>
+      t.setValue(this.plugin.settings.accessClientId).onChange(async (v) => {
         this.plugin.settings.accessClientId = v.trim();
         await this.plugin.saveSettings();
-      }));
+      }),
+    );
 
-    new Setting(containerEl)
-      .setName('Access service token: Client Secret')
-      .addText((t) => t.setValue(this.plugin.settings.accessClientSecret).onChange(async (v) => {
+    new Setting(containerEl).setName('Access service token: Client Secret').addText((t) =>
+      t.setValue(this.plugin.settings.accessClientSecret).onChange(async (v) => {
         this.plugin.settings.accessClientSecret = v.trim();
         await this.plugin.saveSettings();
-      }));
+      }),
+    );
 
     new Setting(containerEl)
       .setName('Push on change')
       .setDesc('Send {path, checksum} to the cloud indexer when a note changes (never the body)')
-      .addToggle((t) => t.setValue(this.plugin.settings.pushOnChange).onChange(async (v) => {
-        this.plugin.settings.pushOnChange = v;
-        await this.plugin.saveSettings();
-      }));
+      .addToggle((t) =>
+        t.setValue(this.plugin.settings.pushOnChange).onChange(async (v) => {
+          this.plugin.settings.pushOnChange = v;
+          await this.plugin.saveSettings();
+        }),
+      );
 
-    new Setting(containerEl)
-      .setName('Inbox folder')
-      .addText((t) => t.setValue(this.plugin.settings.inboxFolder).onChange(async (v) => {
+    new Setting(containerEl).setName('Inbox folder').addText((t) =>
+      t.setValue(this.plugin.settings.inboxFolder).onChange(async (v) => {
         this.plugin.settings.inboxFolder = v.trim() || 'Inbox';
         await this.plugin.saveSettings();
-      }));
+      }),
+    );
 
-    new Setting(containerEl)
-      .setName('Daily note folder')
-      .addText((t) => t.setValue(this.plugin.settings.dailyNoteFolder).onChange(async (v) => {
+    new Setting(containerEl).setName('Daily note folder').addText((t) =>
+      t.setValue(this.plugin.settings.dailyNoteFolder).onChange(async (v) => {
         this.plugin.settings.dailyNoteFolder = v.trim() || 'Notes/Daily';
         await this.plugin.saveSettings();
-      }));
+      }),
+    );
   }
 }

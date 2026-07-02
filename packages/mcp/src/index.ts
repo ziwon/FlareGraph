@@ -22,7 +22,11 @@ export const MCP_TOOLS: McpToolDef[] = [
       type: 'object',
       properties: {
         query: str('Search query (Korean/English supported)'),
-        mode: { type: 'string', enum: ['hybrid', 'keyword', 'semantic', 'graph'], description: 'Retrieval mode, default hybrid' },
+        mode: {
+          type: 'string',
+          enum: ['hybrid', 'keyword', 'semantic', 'graph'],
+          description: 'Retrieval mode, default hybrid',
+        },
         limit: num('Max results, default 10'),
         include_compiled: bool('Rank compiled Wiki/ pages normally (default false)'),
       },
@@ -42,7 +46,8 @@ export const MCP_TOOLS: McpToolDef[] = [
   },
   {
     name: 'list_links',
-    description: 'List outgoing links and backlinks of a note (by path or page id), including dangling links.',
+    description:
+      'List outgoing links and backlinks of a note (by path or page id), including dangling links.',
     access: 'read',
     inputSchema: {
       type: 'object',
@@ -52,7 +57,8 @@ export const MCP_TOOLS: McpToolDef[] = [
   },
   {
     name: 'follow_links',
-    description: 'Resolve and read the notes a given note links to (1 hop). Returns each target with a content preview.',
+    description:
+      'Resolve and read the notes a given note links to (1 hop). Returns each target with a content preview.',
     access: 'read',
     inputSchema: {
       type: 'object',
@@ -65,7 +71,8 @@ export const MCP_TOOLS: McpToolDef[] = [
   },
   {
     name: 'expand_neighbors',
-    description: 'Expand the knowledge graph around a note: wikilinks, backlinks and shared tags up to N hops (default 1, max 2). Only evidence-backed edges are included by default.',
+    description:
+      'Expand the knowledge graph around a note: wikilinks, backlinks and shared tags up to N hops (default 1, max 2). Only evidence-backed edges are included by default.',
     access: 'read',
     inputSchema: {
       type: 'object',
@@ -79,7 +86,8 @@ export const MCP_TOOLS: McpToolDef[] = [
   },
   {
     name: 'find_claims',
-    description: 'Find extracted claims mentioning a topic. Each claim carries source path, span and confidence.',
+    description:
+      'Find extracted claims mentioning a topic. Each claim carries source path, span and confidence.',
     access: 'read',
     inputSchema: {
       type: 'object',
@@ -111,14 +119,19 @@ export const MCP_TOOLS: McpToolDef[] = [
       type: 'object',
       properties: {
         topic: str('Topic to compile, e.g. "RDMA"'),
-        category: { type: 'string', enum: ['Concepts', 'Systems', 'People', 'Claims'], description: 'Wiki subfolder, default Concepts' },
+        category: {
+          type: 'string',
+          enum: ['Concepts', 'Systems', 'People', 'Claims'],
+          description: 'Wiki subfolder, default Concepts',
+        },
       },
       required: ['topic'],
     },
   },
   {
     name: 'find_contradictions',
-    description: 'EXPERIMENTAL: look for potentially contradicting claims about a topic. Low confidence; verify against sources.',
+    description:
+      'EXPERIMENTAL: look for potentially contradicting claims about a topic. Low confidence; verify against sources.',
     access: 'experimental',
     inputSchema: {
       type: 'object',

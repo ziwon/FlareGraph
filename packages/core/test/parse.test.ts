@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { isEmbeddable, isExcluded, tierForPath } from '../src/exclusion.js';
 import { parseNote } from '../src/parse.js';
 import { LinkResolver } from '../src/resolve.js';
-import { isExcluded, tierForPath, isEmbeddable } from '../src/exclusion.js';
 
 const SAMPLE = `---
 title: GPU Fabric RDMA

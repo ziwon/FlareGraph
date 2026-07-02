@@ -1,8 +1,8 @@
 // Bundles migrations/*.sql into migrations/index.js so both the CLI (Node)
 // and non-filesystem consumers can apply them without reading files at runtime.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), '..', 'migrations');
 const files = readdirSync(dir)

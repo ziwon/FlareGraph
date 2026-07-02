@@ -1,74 +1,72 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "flaregraph",
-	"main": "src/index.ts",
-	"assets": {
-		"directory": "console",
-		"run_worker_first": ["/api/*", "/mcp"]
-	},
-	"compatibility_date": "2026-06-01",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"observability": {
-		"enabled": true
-	},
-	"routes": [
-		{
-			"pattern": "<worker-host>",
-			"custom_domain": true
-		}
-	],
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "flaregraph",
-			"database_id": "<d1-database-id>",
-			"migrations_dir": "migrations"
-		}
-	],
-	"r2_buckets": [
-		{
-			"binding": "VAULT",
-			"bucket_name": "flaregraph-vault"
-		},
-		{
-			"bucket_name": "flaregraph-vault",
-			"binding": "flaregraph_vault",
-			"remote": true
-		}
-	],
-	"queues": {
-		"producers": [
-			{
-				"binding": "INDEX_QUEUE",
-				"queue": "flaregraph-index"
-			}
-		],
-		"consumers": [
-			{
-				"queue": "flaregraph-index",
-				"max_batch_size": 10,
-				"max_batch_timeout": 5,
-				"max_retries": 3,
-				"dead_letter_queue": "flaregraph-index-dlq"
-			}
-		]
-	},
-	"vectorize": [
-		{
-			"binding": "VECTORS",
-			"index_name": "flaregraph-chunks"
-		}
-	],
-	"ai": {
-		"binding": "AI"
-	},
-	"vars": {
-		"EMBEDDING_MODEL": "@cf/baai/bge-m3",
-		"LLM_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-		"MCP_ENABLE_WRITE": "true",
-		"MCP_ENABLE_EXPERIMENTAL": "false",
-		"EXCLUDE_FOLDERS": ""
-	}
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "flaregraph",
+  "main": "src/index.ts",
+  "assets": {
+    "directory": "console",
+    "run_worker_first": ["/api/*", "/mcp"]
+  },
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "pattern": "<worker-host>",
+      "custom_domain": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "flaregraph",
+      "database_id": "<d1-database-id>",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "VAULT",
+      "bucket_name": "flaregraph-vault"
+    },
+    {
+      "bucket_name": "flaregraph-vault",
+      "binding": "flaregraph_vault",
+      "remote": true
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "INDEX_QUEUE",
+        "queue": "flaregraph-index"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "flaregraph-index",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "dead_letter_queue": "flaregraph-index-dlq"
+      }
+    ]
+  },
+  "vectorize": [
+    {
+      "binding": "VECTORS",
+      "index_name": "flaregraph-chunks"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "EMBEDDING_MODEL": "@cf/baai/bge-m3",
+    "LLM_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "MCP_ENABLE_WRITE": "true",
+    "MCP_ENABLE_EXPERIMENTAL": "false",
+    "EXCLUDE_FOLDERS": ""
+  }
 }

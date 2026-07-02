@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 // pages: metadata only — canonical note bodies live in the Vault / R2 mirror (ADR-005).
 export const pages = sqliteTable('pages', {

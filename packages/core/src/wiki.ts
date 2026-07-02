@@ -15,7 +15,11 @@ export interface WikiCompileResult {
   openQuestions: string[];
 }
 
-export function buildWikiPrompt(topic: string, sources: WikiSource[], activeRules: string[]): string {
+export function buildWikiPrompt(
+  topic: string,
+  sources: WikiSource[],
+  activeRules: string[],
+): string {
   const rules = activeRules.length
     ? `\nCompiler rules distilled from past errors (follow strictly):\n${activeRules.map((r) => `- ${r}`).join('\n')}\n`
     : '';
@@ -88,6 +92,9 @@ ${result.openQuestions.map((q) => `- ${q}`).join('\n')}
 }
 
 export function wikiPagePath(topic: string, category = 'Concepts'): string {
-  const safe = topic.replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+  const safe = topic
+    .replace(/[\\/:*?"<>|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   return `Wiki/${category}/${safe}.md`;
 }

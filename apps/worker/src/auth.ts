@@ -42,7 +42,10 @@ export interface AuthResult {
 async function verifyAccessJwt(token: string, env: Env): Promise<AuthResult> {
   const [h, p, sig] = token.split('.');
   if (!h || !p || !sig) return { ok: false };
-  const header = JSON.parse(new TextDecoder().decode(b64urlToBytes(h))) as { kid?: string; alg?: string };
+  const header = JSON.parse(new TextDecoder().decode(b64urlToBytes(h))) as {
+    kid?: string;
+    alg?: string;
+  };
   if (header.alg !== 'RS256') return { ok: false };
   const keys = await getJwks(env.ACCESS_TEAM_DOMAIN!);
   const jwk = keys.find((k) => k.kid === header.kid);
@@ -101,7 +104,8 @@ export async function authenticate(req: Request, env: Env): Promise<AuthResult> 
   // wrangler dev only: no auth configured at all
   if (!env.API_TOKEN && !env.ACCESS_TEAM_DOMAIN) {
     const host = new URL(req.url).hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return { ok: true, subject: 'dev', method: 'dev' };
+    if (host === 'localhost' || host === '127.0.0.1')
+      return { ok: true, subject: 'dev', method: 'dev' };
   }
   return { ok: false };
 }

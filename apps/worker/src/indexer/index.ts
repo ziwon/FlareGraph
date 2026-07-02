@@ -1,18 +1,14 @@
-import {
-  indexNote,
-  sha256Hex,
-  type IndexedNote,
-} from '@flaregraph/core';
+import { type IndexedNote, indexNote, sha256Hex } from '@flaregraph/core';
 import {
   deletePage,
   findPageByChecksum,
   getPageByPath,
   recordError,
   resolveAllLinks,
-  savePage,
   type SqlExec,
+  savePage,
 } from '@flaregraph/db';
-import { excludeSettings, type Env, type IndexMessage } from '../env.js';
+import { type Env, excludeSettings, type IndexMessage } from '../env.js';
 import { embedChunks, gcPageVectors } from '../search/embedding.js';
 
 /** Index one R2 object into D1 (+ embeddings). Returns false if skipped. */
@@ -80,7 +76,12 @@ async function embedPending(env: Env, exec: SqlExec, idx: IndexedNote): Promise<
   }
 }
 
-export async function handleDelete(env: Env, exec: SqlExec, key: string, now: string): Promise<void> {
+export async function handleDelete(
+  env: Env,
+  exec: SqlExec,
+  key: string,
+  now: string,
+): Promise<void> {
   const pageId = await deletePage(exec, key, now);
   if (!pageId) return;
   // Delay vector GC so a matching create (rename) can reclaim the vectors first.
@@ -88,7 +89,11 @@ export async function handleDelete(env: Env, exec: SqlExec, key: string, now: st
 }
 
 /** Queue consumer: R2 event notifications, plugin pushes, and delayed GC. */
-export async function consumeBatch(env: Env, exec: SqlExec, batch: MessageBatch<IndexMessage>): Promise<void> {
+export async function consumeBatch(
+  env: Env,
+  exec: SqlExec,
+  batch: MessageBatch<IndexMessage>,
+): Promise<void> {
   const now = new Date().toISOString();
   let changed = false;
   // process deletes first so renames within a batch find the soft-deleted page
@@ -138,14 +143,16 @@ function isDeleteAction(action?: string): boolean {
 }
 
 /** Full rebuild from the R2 mirror (planning §22 criterion 7). */
-export async function rebuildFromMirror(env: Env, exec: SqlExec): Promise<{ enqueued: number }> {
+export async function rebuildFromMirror(env: Env, _exec: SqlExec): Promise<{ enqueued: number }> {
   let cursor: string | undefined;
   let enqueued = 0;
   do {
     const listing: R2Objects = await env.VAULT.list({ cursor, limit: 500 });
     const sendBatch = listing.objects
       .filter((o) => o.key.toLowerCase().endsWith('.md'))
-      .map((o) => ({ body: { kind: 'r2-event', key: o.key, action: 'PutObject' } as IndexMessage }));
+      .map((o) => ({
+        body: { kind: 'r2-event', key: o.key, action: 'PutObject' } as IndexMessage,
+      }));
     for (let i = 0; i < sendBatch.length; i += 100) {
       await env.INDEX_QUEUE.sendBatch(sendBatch.slice(i, i + 100));
     }

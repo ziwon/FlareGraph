@@ -1,4 +1,4 @@
-import { newId, type ChunkRecord, type PageRecord } from '@flaregraph/core';
+import { type ChunkRecord, newId, type PageRecord } from '@flaregraph/core';
 import type { SqlExec } from '@flaregraph/db';
 import type { Env } from '../env.js';
 
@@ -13,9 +13,12 @@ export async function embedTexts(env: Env, texts: string[]): Promise<number[][]>
   // Workers AI batch limit is conservative; embed in slices of 20.
   for (let i = 0; i < texts.length; i += 20) {
     const slice = texts.slice(i, i + 20);
-    const res = (await env.AI.run(env.EMBEDDING_MODEL as keyof AiModels, {
-      text: slice,
-    } as never)) as unknown as BgeM3Response;
+    const res = (await env.AI.run(
+      env.EMBEDDING_MODEL as keyof AiModels,
+      {
+        text: slice,
+      } as never,
+    )) as unknown as BgeM3Response;
     out.push(...res.data);
   }
   return out;
@@ -47,7 +50,10 @@ export async function embedChunks(
        VALUES (?, 'chunk', ?, ?, ?, ?, ?, ?)`,
       [newId('vref'), c.id, page.id, c.id, env.EMBEDDING_MODEL, DIMENSION, now],
     );
-    await exec.run("UPDATE chunks SET embedding_status = 'embedded', embedded_at = ? WHERE id = ?", [now, c.id]);
+    await exec.run(
+      "UPDATE chunks SET embedding_status = 'embedded', embedded_at = ? WHERE id = ?",
+      [now, c.id],
+    );
   }
 }
 
@@ -70,7 +76,9 @@ export async function gcPageVectors(
   let stale = refs;
   if (!opts.all) {
     const live = new Set(
-      (await exec.all<{ id: string }>('SELECT id FROM chunks WHERE page_id = ?', [pageId])).map((r) => r.id),
+      (await exec.all<{ id: string }>('SELECT id FROM chunks WHERE page_id = ?', [pageId])).map(
+        (r) => r.id,
+      ),
     );
     stale = refs.filter((r) => !live.has(r.target_id));
   }

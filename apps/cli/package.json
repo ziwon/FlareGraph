@@ -1,0 +1,24 @@
+{
+  "name": "@flaregraph/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "flaregraph": "./dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@flaregraph/contracts": "workspace:*",
+    "@flaregraph/core": "workspace:*",
+    "@flaregraph/db": "workspace:*",
+    "commander": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

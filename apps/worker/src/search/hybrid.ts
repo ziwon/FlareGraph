@@ -11,7 +11,8 @@ export async function search(
   opts: { mode?: SearchMode; limit?: number; includeCompiled?: boolean } = {},
 ): Promise<SearchResponse> {
   const mode = opts.mode ?? 'hybrid';
-  const limit = opts.limit ?? 10;
+  // clamp caller-provided limits: Vectorize allows topK ≤ 20 with returnMetadata 'all'
+  const limit = Math.min(Math.max(Math.trunc(opts.limit ?? 10) || 10, 1), 25);
   const includeCompiled = opts.includeCompiled ?? false;
   const merged = new Map<string, SearchHit>();
 
@@ -47,7 +48,10 @@ export async function search(
     try {
       const [qvec] = await embedTexts(env, [query]);
       if (qvec) {
-        const res = await env.VECTORS.query(qvec, { topK: limit * 2, returnMetadata: 'all' });
+        const res = await env.VECTORS.query(qvec, {
+          topK: Math.min(limit * 2, 20),
+          returnMetadata: 'all',
+        });
         for (const m of res.matches) {
           const md = (m.metadata ?? {}) as { page_id?: string; path?: string; heading?: string };
           if (!md.page_id || !md.path) continue;

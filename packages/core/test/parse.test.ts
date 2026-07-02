@@ -94,3 +94,24 @@ describe('LinkResolver', () => {
     expect(resolver.resolve('Missing Note')).toBeUndefined();
   });
 });
+
+describe('markdown link destinations (Obsidian-style)', () => {
+  it('parses percent-encoded, angle-bracketed, and bare destinations', () => {
+    const note = parseNote(
+      'Notes/Links.md',
+      [
+        '[encoded](Notes/My%20Note.md)',
+        '[angled](<Notes/Other Note.md>)',
+        '[bare](Notes/Plain.md)',
+        '[web](https://example.com/a%20b)',
+      ].join('\n\n'),
+    );
+    const md = note.links.filter((l) => l.linkType === 'markdown').map((l) => l.rawTarget);
+    expect(md).toContain('Notes/My Note.md');
+    expect(md).toContain('Notes/Other Note.md');
+    expect(md).toContain('Notes/Plain.md');
+    // URLs keep their encoding untouched
+    const url = note.links.find((l) => l.linkType === 'url');
+    expect(url?.rawTarget).toBe('https://example.com/a%20b');
+  });
+});

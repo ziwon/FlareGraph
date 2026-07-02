@@ -3,7 +3,17 @@ import { slugify } from './slug.js';
 import type { ParsedHeading, ParsedLink, ParsedNote } from './types.js';
 
 const WIKILINK_RE = /(!)?\[\[([^\][|#]+)?(#[^\][|]+)?(?:\|([^\][]+))?\]\]/g;
-const MD_LINK_RE = /(?<!!)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+// Destination forms: <path with spaces.md>, percent-encoded, or bare (no spaces).
+const MD_LINK_RE = /(?<!!)\[([^\]]*)\]\(\s*(?:<([^>]+)>|([^)\s]+))(?:\s+"[^"]*")?\s*\)/g;
+
+/** Obsidian writes markdown links percent-encoded; resolve against raw paths. */
+function decodeLinkTarget(target: string): string {
+  try {
+    return decodeURIComponent(target);
+  } catch {
+    return target;
+  }
+}
 const HEADING_RE = /^(#{1,6})\s+(.+?)\s*#*\s*$/;
 const INLINE_TAG_RE = /(^|[\s(])#([\p{L}\p{N}_/-]+)/gu;
 
@@ -78,11 +88,12 @@ export function parseNote(path: string, content: string): ParsedNote {
     });
   }
   for (const m of masked.matchAll(MD_LINK_RE)) {
-    const target = m[2] ?? '';
-    if (target.startsWith('#')) continue; // in-page anchor
+    const raw = m[2] ?? m[3] ?? '';
+    if (raw.startsWith('#')) continue; // in-page anchor
+    const isUrl = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw);
     links.push({
-      rawTarget: target,
-      linkType: /^[a-z][a-z0-9+.-]*:\/\//i.test(target) ? 'url' : 'markdown',
+      rawTarget: isUrl ? raw : decodeLinkTarget(raw),
+      linkType: isUrl ? 'url' : 'markdown',
       anchorText: m[1]?.trim() || undefined,
       position: bodyOffset + (m.index ?? 0),
     });

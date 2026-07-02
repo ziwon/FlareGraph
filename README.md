@@ -1,6 +1,6 @@
 # FlareGraph
 
-> Cloudflare-native LLM Wiki, Knowledge Graph, and Agentic Retreival system for Obsidian and Markdown vaults.
+> Cloudflare-native LLM Wiki, Knowledge Graph, and Agentic Retrieval system for Obsidian and Markdown vaults.
 >  Cloudflare setup: [docs/deploy.md](docs/deploy.md)
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/ziwon/FlareGraph)
@@ -41,36 +41,7 @@ evidence-backed graph, and a safe write path that can never corrupt your notes.
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    subgraph Local
-        A[Obsidian Vault<br/>source of truth]
-        P[Obsidian Plugin]
-        A <--> P
-    end
-
-    subgraph Cloudflare
-        R[(R2 Vault Mirror)]
-        Q[Queues]
-        W[Indexer Worker]
-        D[(D1: metadata / FTS5 / graph)]
-        V[(Vectorize: BGE-M3)]
-        M[API + MCP + Console]
-    end
-
-    A <-->|remotely-save| R
-    R -->|event notifications| Q --> W
-    P -->|"push {path, checksum}"| W
-    W -->|read .md| R
-    W --> D
-    W -->|"@cf/baai/bge-m3"| V
-
-    M -->|hybrid search| D
-    M -->|semantic| V
-    M -->|read_note| R
-    M -->|"write: inbox/ new files only"| R
-    R -->|remotely-save pull| A
-```
+![FlareGraph architecture: authoring clients sync the Obsidian vault to an R2 mirror via remotely-save; R2 events feed a queue-driven indexer that maintains D1 metadata, an FTS5 index, and Vectorize embeddings; a Cloudflare Worker exposes the REST API, MCP server, and search console behind Cloudflare Access, with Workers AI powering embeddings and the wiki compiler](docs/assets/architecture.png)
 
 ```text
 read path:   Vault → remotely-save → R2 → Indexer → D1 / Vectorize
@@ -104,15 +75,6 @@ docs/
   deploy.md            # Cloudflare setup guide
   deploy-history.md    # Deployment notes and history
 e2e/                   # Playwright end-to-end tests
-tpackage.json           # Workspace scripts and Node engine metadata
-pnpm-workspace.yaml    # pnpm workspace package globs
-pnpm-lock.yaml         # Locked dependency graph
-tsconfig.base.json     # Shared TypeScript compiler options
-biome.json             # Formatting and linting configuration
-playwright.config.ts   # E2E test configuration
-justfile               # Common development commands
-llms.txt               # LLM-facing project summary
-LICENSE                # MIT license
 ```
 
 ## Quick Start

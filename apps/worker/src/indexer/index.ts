@@ -85,7 +85,8 @@ export async function handleDelete(
   const pageId = await deletePage(exec, key, now);
   if (!pageId) return;
   // Delay vector GC so a matching create (rename) can reclaim the vectors first.
-  await env.INDEX_QUEUE.send({ kind: 'gc', key, pageId }, { delaySeconds: 60 });
+  // The window covers a typical remotely-save sync interval.
+  await env.INDEX_QUEUE.send({ kind: 'gc', key, pageId }, { delaySeconds: 300 });
 }
 
 /** Queue consumer: R2 event notifications, plugin pushes, and delayed GC. */
@@ -124,6 +125,14 @@ export async function consumeBatch(
           const existing = await getPageByPath(exec, m.key);
           if (existing?.checksum === m.checksum) {
             msg.ack();
+            continue;
+          }
+          // Plugin pushes race remotely-save's R2 upload. If the mirror does not
+          // hold the announced content yet, retry later instead of indexing a
+          // stale object; the R2 event will also cover it once the sync lands.
+          const obj = await env.VAULT.get(m.key);
+          if (!obj || (await sha256Hex(await obj.text())) !== m.checksum) {
+            msg.retry({ delaySeconds: 30 });
             continue;
           }
         }

@@ -26,7 +26,9 @@ export async function captureNote(
     ...(input.title ? [`title: ${JSON.stringify(input.title)}`] : []),
     `created: ${now.toISOString()}`,
     `source: flaregraph-${input.source}`,
-    ...(input.tags?.length ? [`tags: [${input.tags.join(', ')}]`] : []),
+    ...(input.tags?.length
+      ? [`tags: [${input.tags.map((t) => JSON.stringify(t)).join(', ')}]`]
+      : []),
     '---',
     '',
   ].join('\n');
@@ -48,10 +50,14 @@ export async function readNote(
   exec: SqlExec,
   path: string,
 ): Promise<{ content: string; indexedAt: string | null } | null> {
+  // Privacy boundary (ADR-009): only notes that passed the indexer's exclusion
+  // rules are readable. R2 mirrors the whole vault including private notes, so
+  // reading must be gated on the index, never on the mirror alone.
+  const page = await getPageByPath(exec, path);
+  if (!page) return null;
   const obj = await env.VAULT.get(path);
   if (!obj) return null;
-  const page = await getPageByPath(exec, path);
-  return { content: await obj.text(), indexedAt: page?.indexed_at ?? null };
+  return { content: await obj.text(), indexedAt: page.indexed_at ?? null };
 }
 
 export async function listLinksFor(

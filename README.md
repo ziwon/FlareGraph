@@ -41,7 +41,38 @@ evidence-backed graph, and a safe write path that can never corrupt your notes.
 
 ## Architecture
 
-![FlareGraph architecture: authoring clients sync the Obsidian vault to an R2 mirror via remotely-save; R2 events feed a queue-driven indexer that maintains D1 metadata, an FTS5 index, and Vectorize embeddings; a Cloudflare Worker exposes the REST API, MCP server, and search console behind Cloudflare Access, with Workers AI powering embeddings and the wiki compiler](docs/assets/architecture.png)
+Full architecture reference with the annotated diagram: [docs/architecture.md](docs/architecture.md)
+
+```mermaid
+flowchart TD
+    subgraph Local
+        A[Obsidian Vault<br/>source of truth]
+        P[Obsidian Plugin]
+        A <--> P
+    end
+
+    subgraph Cloudflare
+        R[(R2 Vault Mirror)]
+        Q[Queues]
+        W[Indexer Worker]
+        D[(D1: metadata / FTS5 / graph)]
+        V[(Vectorize: BGE-M3)]
+        M[API + MCP + Console]
+    end
+
+    A <-->|remotely-save| R
+    R -->|event notifications| Q --> W
+    P -->|"push {path, checksum}"| W
+    W -->|read .md| R
+    W --> D
+    W -->|"@cf/baai/bge-m3"| V
+
+    M -->|hybrid search| D
+    M -->|semantic| V
+    M -->|read_note| R
+    M -->|"write: inbox/ new files only"| R
+    R -->|remotely-save pull| A
+```
 
 ```text
 read path:   Vault → remotely-save → R2 → Indexer → D1 / Vectorize

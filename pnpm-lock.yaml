@@ -14,6 +14,9 @@ importers:
       '@playwright/test':
         specifier: ^1.56.0
         version: 1.61.1
+      '@types/node':
+        specifier: ^24.13.2
+        version: 24.13.2
 
   apps/cli:
     dependencies:

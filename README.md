@@ -15,6 +15,30 @@
 
 FlareGraph keeps an Obsidian vault as the single source of truth, mirrors it to R2, and layers D1 metadata, FTS5 search, BGE-M3 embeddings on Vectorize, an MCP server, and a wiki compiler on top.
 
+## Positioning
+
+**FlareGraph is not a better note-taking app than Obsidian.**
+**FlareGraph is a layer that turns an Obsidian vault into an LLM/Agent-native knowledge backend.**
+
+Obsidian stays the interface for humans — writing, editing, local search, graph view.
+FlareGraph adds the interface for agents: remote retrieval with citations, a traversable
+evidence-backed graph, and a safe write path that can never corrupt your notes.
+
+| Area | Obsidian alone | With FlareGraph |
+| --- | --- | --- |
+| Writing & editing | Excellent | Not replaced — local only, by design |
+| Local Markdown ownership | Full | Unchanged (vault stays the source of truth) |
+| Search | Good, local, human-only | Also cloud-side: keyword (FTS5) + semantic + graph, consumable by agents with citations |
+| Graph | Visual graph view | Traversable knowledge graph with evidence-backed edges (deterministic first, LLM edges require source spans) |
+| AI agent access | Weak (plugin hacks) | First-class MCP tools + REST API |
+| Cloud endpoint | None | Cloudflare Worker (Access/token-gated) |
+| Mobile notes → index | Requires desktop | Indexed via R2 events, no desktop needed |
+| Wiki pages | Manual | LLM-compiled on demand, never overwrites originals |
+| Claims & evidence | Not modeled | Indexed with source path, span, and confidence |
+| Privacy boundary | N/A (all local) | `private: true` / excluded folders never leave the indexer |
+| External automation | Plugin-dependent | API / queues / agent workflows |
+| Operational cost | Zero | A Cloudflare deployment to run; sync freshness bounded by remotely-save interval |
+
 ## Architecture
 
 ```mermaid
@@ -57,22 +81,38 @@ edit path:   human/plugin → Vault → remotely-save → R2 → reindex
 
 Core invariants: the server never modifies existing files (ADR-006), private notes are
 filtered at the indexer stage (ADR-009), compiled `Wiki/` pages stay out of the embedding
-index (ADR-008), and every derived store is rebuildable from the vault. Full design in
-[docs/planning.md](docs/planning.md).
+index (ADR-008), and every derived store is rebuildable from the vault. 
 
 ## Repository Layout
 
 ```text
 apps/
-  worker/    # Cloudflare Worker: API, MCP, Queue indexer, wiki compiler, search UI
-    console/  # Static console UI served by the Worker
-  plugin/    # Obsidian plugin: push triggers, inbox consolidation, status display
-  cli/       # Local index/search CLI using node:sqlite and FTS5
+  worker/              # Cloudflare Worker: API, MCP, Queue indexer, wiki compiler, search UI
+    console/           # Static console UI served by the Worker
+    migrations/        # Worker-side D1 migrations
+    src/               # Worker runtime, API routes, auth, search, indexer, MCP server
+  plugin/              # Obsidian plugin: push triggers, inbox consolidation, status display
+  cli/                 # Local index/search CLI using node:sqlite and FTS5
+    src/               # CLI commands, local indexer, SQLite adapter
+    test/              # CLI tests
 packages/
-  core/      # Markdown parser, heading-aware chunker, exclusions, wikilink resolver, wiki renderer
-  db/        # Drizzle schema, migrations, and shared SQLite/D1 store logic
-  contracts/ # API DTOs
-  mcp/       # MCP tool definitions split into read, write, and experimental groups
+  core/                # Markdown parser, chunker, exclusions, wikilink resolver, wiki renderer
+  db/                  # Drizzle schema, migrations, scripts, and shared SQLite/D1 store logic
+  contracts/           # API DTOs
+  mcp/                 # MCP tool definitions split into read, write, and experimental groups
+docs/
+  deploy.md            # Cloudflare setup guide
+  deploy-history.md    # Deployment notes and history
+e2e/                   # Playwright end-to-end tests
+tpackage.json           # Workspace scripts and Node engine metadata
+pnpm-workspace.yaml    # pnpm workspace package globs
+pnpm-lock.yaml         # Locked dependency graph
+tsconfig.base.json     # Shared TypeScript compiler options
+biome.json             # Formatting and linting configuration
+playwright.config.ts   # E2E test configuration
+justfile               # Common development commands
+llms.txt               # LLM-facing project summary
+LICENSE                # MIT license
 ```
 
 ## Quick Start

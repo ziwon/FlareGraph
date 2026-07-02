@@ -1,0 +1,38 @@
+# FlareGraph
+
+> Obsidian-native LLM Wiki / Knowledge Graph / Agentic Retrieval System on Cloudflare.
+> The Obsidian vault is the single source of truth; R2 mirrors it, D1 holds the
+> metadata/FTS5/graph index, Vectorize holds BGE-M3 chunk embeddings, and a Worker
+> exposes REST + MCP so agents can search, read, follow links, and capture notes.
+
+Key invariants: the server never modifies existing files (writes go to `inbox/` as new
+files only), private notes are excluded at the indexer stage, compiled `Wiki/` pages are
+kept out of the embedding index, and every LLM-extracted claim/edge carries source
+evidence. All derived stores (D1, Vectorize, R2 mirror) are rebuildable from the vault.
+
+## Docs
+
+- [Planning / architecture / ADRs](docs/planning.md): full design document, data model, search strategy, MVP phases
+- [Deployment guide](docs/deploy.md): step-by-step Cloudflare setup for your own instance
+- [Deployment history](docs/deploy-history.md): reference instance record (<worker-host>)
+- [README](README.md): repository layout, quick start, API surface
+
+## Code
+
+- [Worker entry](apps/worker/src/index.ts): Hono app, auth middleware, queue consumer
+- [MCP server](apps/worker/src/mcp/server.ts): streamable-HTTP JSON-RPC tools endpoint
+- [Hybrid search](apps/worker/src/search/hybrid.ts): keyword + semantic + graph rerank
+- [Indexer](apps/worker/src/indexer/index.ts): R2 event consumer, rename detection, vector GC
+- [Core parsing](packages/core/src/parse.ts): frontmatter/wikilink/heading extraction
+- [Chunker](packages/core/src/chunker.ts): heading-aware, CJK-aware, content-addressed chunks
+- [Shared store](packages/db/src/store.ts): SQLite/D1-portable indexing and search SQL
+- [CLI](apps/cli/src/main.ts): local vault indexing and FTS search
+- [MCP tool definitions](packages/mcp/src/index.ts): read/write/experimental tool tiers
+
+## API
+
+- `GET /api/search?q=&mode=hybrid|keyword|semantic|graph` — hybrid retrieval with tier rerank
+- `GET /api/notes/<path>` — canonical markdown from the R2 mirror
+- `POST /api/capture` — create a new note in `inbox/` (only write primitive)
+- `POST /mcp` — MCP: search_notes, read_note, list_links, follow_links, expand_neighbors, find_claims, capture_note, compile_wiki_page
+- Auth: Cloudflare Access JWT or `Authorization: Bearer <API_TOKEN>`

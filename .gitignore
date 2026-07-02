@@ -8,5 +8,7 @@ dist/
 .DS_Store
 coverage/
 .refs/
+playwright-report/
+test-results/
 packages/db/migrations/index.js
 packages/db/migrations/index.d.ts

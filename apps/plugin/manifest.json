@@ -1,0 +1,9 @@
+{
+  "id": "flaregraph",
+  "name": "FlareGraph",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Instant cloud index trigger, inbox consolidation, and index status for your FlareGraph deployment.",
+  "author": "ziwon",
+  "isDesktopOnly": false
+}

@@ -49,7 +49,7 @@ export function renderWikiPage(
 ): string {
   const fm = [
     '---',
-    `title: ${topic}`,
+    `title: ${JSON.stringify(topic)}`,
     'tier: compiled',
     `generated_at: ${generatedAt}`,
     'generator: flaregraph-wiki-compiler',
@@ -58,7 +58,7 @@ export function renderWikiPage(
   const claims = result.claims
     .map(
       (c) =>
-        `- ${c.text} _(source: [[${c.sourcePath.replace(/\.md$/i, '')}]]${c.heading ? `#${c.heading}` : ''}, confidence ${c.confidence.toFixed(2)})_`,
+        `- ${c.text} _(source: [[${c.sourcePath.replace(/\.md$/i, '')}${c.heading ? `#${c.heading}` : ''}]], confidence ${c.confidence.toFixed(2)})_`,
     )
     .join('\n');
   return `${fm}

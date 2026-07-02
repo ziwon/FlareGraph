@@ -47,7 +47,9 @@ export async function embedChunks(
   for (const c of chunks) {
     await exec.run(
       `INSERT INTO vector_refs (id, target_type, target_id, page_id, vector_id, model, dimension, created_at)
-       VALUES (?, 'chunk', ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, 'chunk', ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(target_type, target_id, model) DO UPDATE SET
+         page_id = excluded.page_id, vector_id = excluded.vector_id, created_at = excluded.created_at`,
       [newId('vref'), c.id, page.id, c.id, env.EMBEDDING_MODEL, DIMENSION, now],
     );
     await exec.run(

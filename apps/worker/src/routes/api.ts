@@ -1,4 +1,5 @@
 import type { SearchMode } from '@flaregraph/contracts';
+import { parseWikiCategory } from '@flaregraph/core';
 import { getPageByPath, keywordSearch, safeJsonArray } from '@flaregraph/db';
 import { Hono } from 'hono';
 import { compileWikiPage, extractGraph } from '../compiler.js';
@@ -139,11 +140,13 @@ api.post('/index/rebuild', async (c) => {
 api.post('/wiki/compile', async (c) => {
   const body = (await c.req.json()) as { topic?: string; category?: string; maxSources?: number };
   if (!body.topic?.trim()) return c.json({ error: 'topic required' }, 400);
+  const category = parseWikiCategory(body.category);
+  if (!category) return c.json({ error: 'invalid category' }, 400);
   const result = await compileWikiPage(
     c.env,
     c.get('exec'),
     body.topic,
-    body.category ?? 'Concepts',
+    category,
     body.maxSources ?? 5,
   );
   return c.json(result, 201);

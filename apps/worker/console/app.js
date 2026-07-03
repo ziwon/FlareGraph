@@ -132,7 +132,8 @@
     $('rmd').innerHTML = '<div class="spin">loading…</div>';
     $('rlinks').hidden = true;
     try {
-      const res = await api(`/api/notes/${encodeURI(path)}`);
+      const notePath = path.split('/').map(encodeURIComponent).join('/');
+      const res = await api(`/api/notes/${notePath}`);
       if (!res.ok) {
         $('rmd').textContent = `failed to read note (${res.status})`;
         return;

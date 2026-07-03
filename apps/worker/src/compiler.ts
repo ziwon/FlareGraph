@@ -3,6 +3,7 @@ import {
   newId,
   renderWikiPage,
   sha256Hex,
+  type WikiCategory,
   type WikiCompileResult,
   type WikiSource,
   wikiPagePath,
@@ -41,7 +42,7 @@ export async function compileWikiPage(
   env: Env,
   exec: SqlExec,
   topic: string,
-  category = 'Concepts',
+  category: WikiCategory = 'Concepts',
   maxSources = 5,
 ): Promise<{ r2Key: string; sources: string[] }> {
   const hits = await keywordSearch(exec, topic, { limit: maxSources * 2, includeCompiled: false });

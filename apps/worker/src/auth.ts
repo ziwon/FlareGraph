@@ -70,8 +70,9 @@ async function verifyAccessJwt(token: string, env: Env): Promise<AuthResult> {
     email?: string;
     common_name?: string;
   };
+  if (!env.ACCESS_AUD) return { ok: false };
   const auds = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (env.ACCESS_AUD && !auds.includes(env.ACCESS_AUD)) return { ok: false };
+  if (!auds.includes(env.ACCESS_AUD)) return { ok: false };
   if (!payload.exp || payload.exp * 1000 < Date.now()) return { ok: false };
   return { ok: true, subject: payload.email ?? payload.common_name, method: 'access-jwt' };
 }

@@ -1,3 +1,4 @@
+import { parseWikiCategory } from '@flaregraph/core';
 import type { SqlExec } from '@flaregraph/db';
 import { enabledTools } from '@flaregraph/mcp';
 import { compileWikiPage } from '../compiler.js';
@@ -169,13 +170,11 @@ async function callTool(
         source: 'mcp',
         tool: 'capture_note',
       });
-    case 'compile_wiki_page':
-      return compileWikiPage(
-        env,
-        exec,
-        String(args.topic ?? ''),
-        args.category ? String(args.category) : 'Concepts',
-      );
+    case 'compile_wiki_page': {
+      const category = parseWikiCategory(args.category);
+      if (!category) throw new Error('invalid category');
+      return compileWikiPage(env, exec, String(args.topic ?? ''), category);
+    }
     case 'find_contradictions': {
       const claims = await findClaims(exec, String(args.query ?? ''), 50);
       return {

@@ -15,6 +15,15 @@ export interface WikiCompileResult {
   openQuestions: string[];
 }
 
+export const WIKI_CATEGORIES = ['Concepts', 'Systems', 'People', 'Claims'] as const;
+export type WikiCategory = (typeof WIKI_CATEGORIES)[number];
+
+export function parseWikiCategory(input: unknown): WikiCategory | undefined {
+  if (input == null || input === '') return 'Concepts';
+  if (typeof input !== 'string') return undefined;
+  return WIKI_CATEGORIES.includes(input as WikiCategory) ? (input as WikiCategory) : undefined;
+}
+
 export function buildWikiPrompt(
   topic: string,
   sources: WikiSource[],
@@ -91,7 +100,7 @@ ${result.openQuestions.map((q) => `- ${q}`).join('\n')}
 `;
 }
 
-export function wikiPagePath(topic: string, category = 'Concepts'): string {
+export function wikiPagePath(topic: string, category: WikiCategory = 'Concepts'): string {
   const safe = topic
     .replace(/[\\/:*?"<>|]/g, ' ')
     .replace(/\s+/g, ' ')

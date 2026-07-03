@@ -152,21 +152,40 @@ function isDeleteAction(action?: string): boolean {
 }
 
 /** Full rebuild from the R2 mirror (planning §22 criterion 7). */
-export async function rebuildFromMirror(env: Env, _exec: SqlExec): Promise<{ enqueued: number }> {
+export async function rebuildFromMirror(
+  env: Env,
+  exec: SqlExec,
+): Promise<{ enqueued: number; deleted: number }> {
   let cursor: string | undefined;
   let enqueued = 0;
+  let deleted = 0;
+  const mirrorKeys = new Set<string>();
+  const now = new Date().toISOString();
   do {
     const listing: R2Objects = await env.VAULT.list({ cursor, limit: 500 });
     const sendBatch = listing.objects
       .filter((o) => o.key.toLowerCase().endsWith('.md'))
-      .map((o) => ({
-        body: { kind: 'r2-event', key: o.key, action: 'PutObject' } as IndexMessage,
-      }));
+      .map((o) => {
+        mirrorKeys.add(o.key);
+        return {
+          body: { kind: 'r2-event', key: o.key, action: 'PutObject' } as IndexMessage,
+        };
+      });
     for (let i = 0; i < sendBatch.length; i += 100) {
       await env.INDEX_QUEUE.sendBatch(sendBatch.slice(i, i + 100));
     }
     enqueued += sendBatch.length;
     cursor = listing.truncated ? listing.cursor : undefined;
   } while (cursor);
-  return { enqueued };
+
+  const livePages = await exec.all<{ path: string }>(
+    'SELECT path FROM pages WHERE deleted_at IS NULL',
+  );
+  for (const page of livePages) {
+    if (mirrorKeys.has(page.path)) continue;
+    await handleDelete(env, exec, page.path, now);
+    deleted++;
+  }
+  if (deleted > 0) await resolveAllLinks(exec);
+  return { enqueued, deleted };
 }

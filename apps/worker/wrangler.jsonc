@@ -21,7 +21,7 @@
     {
       "binding": "DB",
       "database_name": "flaregraph",
-      "database_id": "<d1-database-id>",
+      "database_id": "<replace-with-your-d1-database-id>",
       "migrations_dir": "migrations"
     }
   ],

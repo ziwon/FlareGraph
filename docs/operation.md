@@ -1,22 +1,22 @@
-# 배포 이력 — 레퍼런스 인스턴스
+# 운영 기록
 
-> 범용 배포 절차는 [deploy.md](deploy.md) 참고. 이 문서는 원 저자 인스턴스의 기록이다.
+> 범용 배포 절차는 [deploy.md](deploy.md) 참고. 이 문서는 공개 가능한 수준으로 비식별화한 운영 상태와 배포 이력 기록이다.
 
-## 현재 상태 (2026-07-03)
+## 현재 상태 (2026-07-04)
 
 | 리소스 | 값/상태 |
 |---|---|
-| Worker | ✅ https://<worker-host> (custom domain; workers.dev 라우트는 자동 비활성화됨) |
-| 계정 | YP (`<cloudflare-account-id>`) |
-| D1 `flaregraph` | ✅ `<d1-database-id>`, 마이그레이션 `0000_init` 적용 |
-| R2 `flaregraph-vault` | ✅ 생성 (2026-07-02T22:01Z) |
-| R2 이벤트 알림 | ✅ rule `<r2-notification-rule-prefix>…` — Put/Copy/Multipart/Delete/Lifecycle → `flaregraph-index` |
-| Queues | ✅ `flaregraph-index` (`<queue-id-prefix>…`), DLQ `flaregraph-index-dlq` |
-| Vectorize `flaregraph-chunks` | ✅ 1024 dims, cosine |
+| Worker | ✅ custom domain 연결됨 (workers.dev 라우트는 비활성화) |
+| 계정 | ✅ Cloudflare 계정 연결됨 (계정명/ID 비공개) |
+| D1 | ✅ 원격 DB 생성 및 `0000_init` 마이그레이션 적용 |
+| R2 | ✅ vault mirror 버킷 생성 |
+| R2 이벤트 알림 | ✅ object create/delete 이벤트가 index queue로 전달됨 |
+| Queues | ✅ index queue 및 DLQ 생성 |
+| Vectorize | ✅ chunk index 생성 (1024 dims, cosine) |
 | Workers AI | ✅ `@cf/baai/bge-m3` 임베딩 동작 확인 (1024-dim) |
-| Secrets | ✅ `API_TOKEN` 설정됨 / ⬜ `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` 미설정 |
-| Cloudflare Access (이메일 로그인) | ⬜ 미설정 — deploy.md 6번 절차 |
-| remotely-save 동기화 | ⬜ 미설정 — deploy.md 7번 절차 |
+| Secrets | ✅ `API_TOKEN`, `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` 설정됨 |
+| Cloudflare Access (이메일 로그인) | ✅ Access 앱 + owner allow 정책 동작 확인 |
+| remotely-save 동기화 | ✅ 첫 동기화 및 인덱싱 확인
 
 ## 타임라인
 
@@ -32,7 +32,7 @@
 
 ### 2026-07-02~03 (2차 — 풀 배포)
 
-- 사용자가 대시보드에서 R2 활성화 + `flaregraph-vault` 버킷 및 이벤트 알림 rule 생성.
+- 사용자가 대시보드에서 R2 활성화 + vault mirror 버킷 및 이벤트 알림 rule 생성.
 - `wrangler.jsonc`(R2 바인딩 포함) 풀 구성으로 재배포. 임시 `wrangler.no-r2.jsonc` 제거.
 - 프로덕션 E2E 검증:
   - `POST /api/capture` → R2 `inbox/` 파일 생성 ✅
@@ -44,7 +44,7 @@
 
 ### 2026-07-03 (커스텀 도메인)
 
-- `<worker-host>`를 Workers custom domain으로 연결 (`wrangler.jsonc`의 `routes`,
+- Workers custom domain 연결 (`wrangler.jsonc`의 `routes`,
   DNS/인증서 자동 발급). 이후 workers.dev 라우트는 자동 비활성화(404).
 
 ### 2026-07-03 (콘솔 UI)

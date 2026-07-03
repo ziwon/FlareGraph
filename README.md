@@ -95,8 +95,6 @@ apps/
     src/               # Worker runtime, API routes, auth, search, indexer, MCP server
   plugin/              # Obsidian plugin: push triggers, inbox consolidation, status display
   cli/                 # Local index/search CLI using node:sqlite and FTS5
-    src/               # CLI commands, local indexer, SQLite adapter
-    test/              # CLI tests
 packages/
   core/                # Markdown parser, chunker, exclusions, wikilink resolver, wiki renderer
   db/                  # Drizzle schema, migrations, scripts, and shared SQLite/D1 store logic
@@ -104,7 +102,6 @@ packages/
   mcp/                 # MCP tool definitions split into read, write, and experimental groups
 docs/
   deploy.md            # Cloudflare setup guide
-  deploy-history.md    # Deployment notes and history
 e2e/                   # Playwright end-to-end tests
 ```
 

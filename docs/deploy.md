@@ -3,7 +3,7 @@
 A step-by-step guide for deploying your own FlareGraph instance. Everything runs on
 Cloudflare's free/pay-as-you-go tiers: Workers, D1, R2, Queues, Vectorize, and Workers AI.
 
-> Looking for the history of the reference deployment? See [deploy-history.md](deploy-history.md).
+> Looking for the reference instance's current state and operation notes? See [operation.md](operation.md).
 
 ## Prerequisites
 

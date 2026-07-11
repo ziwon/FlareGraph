@@ -23,4 +23,31 @@ test.describe('console UI', () => {
     }
     await expect(page.locator('#q')).toBeEnabled();
   });
+
+  test('home view degrades gracefully without an API', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#listlabel')).toHaveText(/recently updated/i);
+    // static server has no /api — the browse list must show a calm empty state
+    await expect(page.locator('#results .empty')).toBeVisible();
+  });
+
+  test('theme toggle flips and persists', async ({ page }) => {
+    await page.goto('/');
+    const theme = () => page.evaluate(() => document.documentElement.dataset.theme);
+    const initial = await theme();
+    await page.locator('#themebtn').click();
+    const flipped = await theme();
+    expect(flipped).not.toBe(initial);
+    await page.reload();
+    expect(await theme()).toBe(flipped);
+  });
+
+  test('slash shortcut focuses search', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('header .name').click(); // move focus away from the autofocused input
+    await expect(page.locator('#q')).not.toBeFocused();
+    await page.keyboard.press('/');
+    await expect(page.locator('#q')).toBeFocused();
+    await expect(page.locator('#q')).toHaveValue('');
+  });
 });

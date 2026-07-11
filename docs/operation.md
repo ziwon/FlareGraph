@@ -55,6 +55,21 @@
   입력 다이얼로그를 띄우고 localStorage에 보관. Access를 붙이면 쿠키로 자동 인증.
 - 기존 인라인 `src/ui.ts` 제거.
 
+### 2026-07-12 (콘솔 UI 2차 — 브라우즈 뷰 + 라이트 테마)
+
+- 첫 화면에 "recently updated" 브라우즈 뷰 추가 — 검색 전에도 최근 노트가 보임.
+  `GET /api/pages`에 `sort=recent`(updated_at/indexed_at 역순), `path=<exact>` 파라미터 추가.
+- Obsidian풍 미니멀 라이트 테마 추가(뉴트럴 화이트 서피스 + 바이올렛 액센트).
+  다크(QuietFabric 표준)는 유지, `prefers-color-scheme` 기본값 + 헤더 토글로 전환,
+  localStorage 저장. 테마 전환 시 transition 일괄 비활성 가드로 색 찢어짐 방지.
+- 키보드 내비게이션: `⌘K`/`/` 검색 포커스, `↑/↓` 선택, `Enter` 열기, `Esc` 닫기/초기화.
+- 리더 개선: 마크다운 테이블·체크리스트 렌더링, 모바일(≤900px) 풀스크린 오버레이,
+  퍼센트 인코딩된 R2 키의 경로 표시 디코딩. 리스트는 태그 칩(클릭 시 태그 검색) 표시.
+- Google Fonts `@import`(JetBrains Mono) 제거 — 외부 요청 없는 시스템 모노 스택으로 대체.
+- 남아 있던 미사용 `src/ui.ts`(구 인라인 폴백 UI) 실제 삭제.
+- 검증: 로컬 wrangler dev(D1/R2/Queue local)로 rebuild → 색인 → 브라우즈/검색/리더
+  플로우를 Playwright로 21개 체크 통과. 정적 e2e 스모크 5개(테마·홈·단축키 포함) 통과.
+
 ## 운영 메모
 
 - 토큰 분실 시 재발급: `openssl rand -hex 32 | wrangler secret put API_TOKEN` (apps/worker에서).

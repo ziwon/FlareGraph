@@ -29,9 +29,15 @@ api.get('/health', async (c) => {
 api.get('/pages', async (c) => {
   const exec = c.get('exec');
   const limit = Math.min(parseInt(c.req.query('limit') ?? '100', 10), 10000);
+  const path = c.req.query('path');
+  // sort is a fixed whitelist, never interpolated from raw input
+  const orderBy =
+    c.req.query('sort') === 'recent' ? 'COALESCE(updated_at, indexed_at) DESC, path' : 'path';
+  const select =
+    'SELECT id, path, title, aliases, tags, tier, checksum, indexed_at, updated_at FROM pages WHERE deleted_at IS NULL';
   const rows = await exec.all<Record<string, unknown>>(
-    'SELECT id, path, title, aliases, tags, tier, checksum, indexed_at, updated_at FROM pages WHERE deleted_at IS NULL ORDER BY path LIMIT ?',
-    [limit],
+    path ? `${select} AND path = ? LIMIT 1` : `${select} ORDER BY ${orderBy} LIMIT ?`,
+    [path ?? limit],
   );
   return c.json({
     pages: rows.map((r) => ({
